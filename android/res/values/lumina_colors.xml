@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="lumina_bg">#04070F</color>
+    <color name="lumina_bg2">#080E1C</color>
+    <color name="lumina_bg3">#0C1528</color>
+    <color name="lumina_blue">#1A6BFF</color>
+    <color name="lumina_blue_dim">#1F1A6BFF</color>
+    <color name="lumina_text">#F0F4FF</color>
+    <color name="lumina_muted">#64748B</color>
+    <color name="lumina_border">#12FFFFFF</color>
+    <color name="lumina_error">#EF4444</color>
+    <color name="lumina_success">#22C55E</color>
+</resources>

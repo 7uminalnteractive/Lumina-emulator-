@@ -334,11 +334,12 @@ struct FontDesc {
 };
 
 // Append ".ttf" to get the actual filenames.
+// Lumina theme: DM Sans replaces Roboto Condensed as the UI's sans-serif family.
 static const FontDesc g_fontDescs[] = {
-	{FontFamily::SansSerif, FontStyleFlags::Default, "Roboto Condensed", "Roboto_Condensed-Regular"},
-	{FontFamily::SansSerif, FontStyleFlags::Bold, "Roboto Condensed", "Roboto_Condensed-Bold"},
-	{FontFamily::SansSerif, FontStyleFlags::Italic, "Roboto Condensed", "Roboto_Condensed-Italic"},
-	{FontFamily::SansSerif, FontStyleFlags::Light, "Roboto Condensed", "Roboto_Condensed-Light"},
+	{FontFamily::SansSerif, FontStyleFlags::Default, "DM Sans", "DM_Sans-Regular"},
+	{FontFamily::SansSerif, FontStyleFlags::Bold, "DM Sans", "DM_Sans-Bold"},
+	{FontFamily::SansSerif, FontStyleFlags::Italic, "DM Sans", "DM_Sans-Italic"},
+	{FontFamily::SansSerif, FontStyleFlags::Light, "DM Sans", "DM_Sans-Light"},
 	{FontFamily::Fixed, FontStyleFlags::Default, "Inconsolata", "Inconsolata-Regular"},
 };
 

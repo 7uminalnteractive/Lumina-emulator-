@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/lumina_bg"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/btn_back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="←  Voltar"
+        android:textColor="@color/lumina_muted"
+        android:textSize="15sp"
+        android:padding="8dp"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Minha conta"
+        android:textColor="@color/lumina_text"
+        android:textSize="26sp"
+        android:fontFamily="sans-serif-condensed"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp" />
+
+    <TextView
+        android:id="@+id/account_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/lumina_text"
+        android:textSize="16sp"
+        android:layout_marginTop="16dp" />
+
+    <TextView
+        android:id="@+id/account_email"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/lumina_muted"
+        android:textSize="13sp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="32dp" />
+
+    <Button
+        android:id="@+id/btn_change_library_folder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Verificar acesso ao armazenamento"
+        android:textAllCaps="false"
+        android:background="@drawable/lumina_button_bg"
+        android:textColor="@android:color/white"
+        android:paddingVertical="12dp"
+        android:layout_marginBottom="12dp" />
+
+    <Button
+        android:id="@+id/btn_logout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Sair"
+        android:textAllCaps="false"
+        android:background="@android:color/transparent"
+        android:textColor="@color/lumina_error"
+        android:paddingVertical="12dp" />
+
+</LinearLayout>

@@ -64,6 +64,16 @@ dependencies {
 	implementation("androidx.appcompat:appcompat:1.7.1")
 	implementation("androidx.documentfile:documentfile:1.1.0")
 	implementation("com.google.protobuf:protobuf-javalite:4.35.1")
+
+	// Usado pelo SupabaseAuthClient (tela de login Lumina)
+	implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+	// Usados pela LibraryActivity (grade de jogos estilo PS5)
+	implementation("androidx.recyclerview:recyclerview:1.3.2")
+	implementation("androidx.cardview:cardview:1.0.0")
+
+	// Usado para carregamento e cache de imagens
+	implementation("com.github.bumptech.glide:glide:4.16.0")
 }
 
 protobuf {

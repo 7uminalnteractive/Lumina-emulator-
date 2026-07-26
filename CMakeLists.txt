@@ -911,6 +911,9 @@ if(ANDROID)
 		android/jni/app-android.cpp
 		android/jni/AndroidJavaGLContext.cpp
 		android/jni/AndroidJavaGLContext.h
+		android/jni/AndroidVulkanContext.cpp
+		android/jni/AndroidVulkanContext.h
+		android/jni/AndroidGraphicsContext.h
 		android/jni/AndroidAudio.cpp
 		android/jni/AndroidAudio.h
 		android/jni/OpenSLContext.cpp
@@ -989,7 +992,7 @@ elseif(USING_QT_UI)
 	set(CMAKE_AUTOMOC ON)
 	find_package(Qt5 COMPONENTS OpenGL Gui Core Multimedia)
 	if(NOT Qt5_FOUND)
-		message(FATAL_ERROR "Qt5 not found for USING_QT_UI=ON. On linux, sudo apt install qt5-qmake qtsystems5-dev qtmultimedia5-dev qttools5-dev-tools libqt5opengl5-dev libcurl4-openssl-dev. On macOS with Homebrew, install qt@5 and set CMAKE_PREFIX_PATH to /opt/homebrew/opt/qt@5 (or use ./b.sh --qtbrew).")
+		message(FATAL_ERROR "Qt5 not found for USING_QT_UI=ON. On macOS with Homebrew, install qt@5 and set CMAKE_PREFIX_PATH to /opt/homebrew/opt/qt@5 (or use ./b.sh --qtbrew).")
 	endif()
 	list(APPEND NativeAppSource
 		Qt/QtMain.cpp
@@ -1049,6 +1052,11 @@ else()
 		SDL/SDLMain.cpp
 		SDL/SDLGLGraphicsContext.cpp
 	)
+	if(NOT USE_LIBNX)
+		list(APPEND targetExtra
+			SDL/SDLVulkanGraphicsContext.cpp
+		)
+	endif()
 	if(SDL_TTF_LIB_TARGET)
 		list(APPEND targetExtraLibs ${SDL_TTF_LIB_TARGET})
 	endif()
@@ -1238,6 +1246,7 @@ set(WindowsFiles
 	Windows/GPU/D3D11Context.cpp
 	Windows/GPU/D3D11Context.h
 	Windows/GPU/WindowsGLContext.cpp
+	Windows/GPU/WindowsVulkanContext.cpp
 	Windows/InputBox.cpp
 	Windows/InputBox.h
 	Windows/InputDevice.cpp
@@ -1300,6 +1309,10 @@ set(NativeAssets
 	assets/Roboto_Condensed-Light.ttf
 	assets/Roboto_Condensed-Bold.ttf
 	assets/Roboto_Condensed-Italic.ttf
+	assets/DM_Sans-Regular.ttf
+	assets/DM_Sans-Light.ttf
+	assets/DM_Sans-Bold.ttf
+	assets/DM_Sans-Italic.ttf
 	assets/Inconsolata-Regular.ttf
 	assets/compat.ini
 	assets/adhoc-servers.json
@@ -1352,6 +1365,7 @@ if(HEADLESS)
 			Windows/GPU/D3D11Context.cpp
 			Windows/GPU/D3D11Context.h
 			Windows/GPU/WindowsGLContext.cpp
+			Windows/GPU/WindowsVulkanContext.cpp
 			Windows/W32Util/ShellUtil.cpp
 			Windows/W32Util/ShellUtil.h
 			Windows/CaptureDevice.cpp
@@ -1669,6 +1683,7 @@ if(IOS AND NOT LIBRETRO)
 			XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING[variant=Release] "YES"
 			XCODE_ATTRIBUTE_STRIP_INSTALLED_PRODUCT[variant=Release] "YES"
 
+			#XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS ${BUNDLE_ENTITLEMENTS}
 			XCODE_ATTRIBUTE_SKIP_INSTALL NO
 			XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
 		)
