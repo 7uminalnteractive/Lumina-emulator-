@@ -1,0 +1,56 @@
+name: Build Lumina PSP APK
+
+# Roda manualmente (aba "Actions" no GitHub, botão "Run workflow")
+# e também automaticamente a cada push na branch master.
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout do fork (com submódulos)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar NDK e CMake (mesma versão do build.gradle.kts)
+        run: |
+          sdkmanager --install "ndk;29.0.14206865" "cmake;3.22.1"
+
+      - name: Cache do Gradle (acelera builds futuros)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Permissão de execução do gradlew
+        run: chmod +x gradlew
+
+      - name: Compilar APK (flavor normal, debug)
+        run: ./gradlew :android:assembleNormalDebug --stacktrace -PANDROID_VERSION_CODE=1 -PANDROID_VERSION_NAME=0.1.0-lumina
+
+      - name: Upload do APK gerado
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumina-psp-debug-apk
+          path: android/build/outputs/apk/normal/debug/*.apk
+          if-no-files-found: error
