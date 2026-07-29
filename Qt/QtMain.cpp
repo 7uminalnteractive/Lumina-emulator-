@@ -54,7 +54,6 @@
 #include "Core/CmdLine.h"
 #include "Core/Config.h"
 #include "Core/ConfigValues.h"
-#include "Core/EmuThread.h"
 #include "Core/HW/Camera.h"
 #include "Core/Debugger/SymbolMap.h"
 
@@ -663,8 +662,40 @@ static int mainInternal(QApplication &a) {
 	return retval;
 }
 
+void MainUI::EmuThreadFunc() {
+	SetCurrentThreadName("EmuThread");
+
+	// There's no real requirement that NativeInit happen on this thread, though it can't hurt...
+	// We just call the update/render loop here. NativeInitGraphics should be here though.
+	NativeInitGraphics(graphicsContext);
+
+	emuThreadState = (int)EmuThreadState::RUNNING;
+	while (emuThreadState != (int)EmuThreadState::QUIT_REQUESTED) {
+		updateAccelerometer();
+		NativeFrame(graphicsContext);
+	}
+	emuThreadState = (int)EmuThreadState::STOPPED;
+
+	NativeShutdownGraphics(graphicsContext);
+}
+
+void MainUI::EmuThreadStart() {
+	emuThreadState = (int)EmuThreadState::START_REQUESTED;
+	emuThread = std::thread([&]() { this->EmuThreadFunc(); } );
+}
+
+void MainUI::EmuThreadStop() {
+	emuThreadState = (int)EmuThreadState::QUIT_REQUESTED;
+}
+
+void MainUI::EmuThreadJoin() {
+	emuThread.join();
+	emuThread = std::thread();
+}
+
 MainUI::MainUI(QWidget *parent)
 	: QGLWidget(parent) {
+	emuThreadState = (int)EmuThreadState::DISABLED;
 	setAttribute(Qt::WA_AcceptTouchEvents);
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 	setAttribute(Qt::WA_LockLandscapeOrientation);
@@ -680,14 +711,18 @@ MainUI::MainUI(QWidget *parent)
 
 MainUI::~MainUI() {
 	INFO_LOG(Log::System, "MainUI::Destructor");
-	if (graphicsContext->NeedsSeparateEmuThread()) {
-		EmuThread_Join(graphicsContext, emuThread_);
+	if (emuThreadState != (int)EmuThreadState::DISABLED) {
+		INFO_LOG(Log::System, "EmuThreadStop");
+		EmuThreadStop();
+		graphicsContext->ThreadFrameUntilCondition([this]() -> bool {
+			return emuThreadState == (int)EmuThreadState::STOPPED;
+		});
+		EmuThreadJoin();
 	}
 #if defined(MOBILE_DEVICE)
 	delete acc;
 #endif
-	graphicsContext->ShutdownSurface();
-	graphicsContext->ShutdownAPI();
+	graphicsContext->Shutdown();
 	delete graphicsContext;
 	graphicsContext = nullptr;
 }
@@ -871,16 +906,12 @@ void MainUI::initializeGL() {
 		// OpenGL uses a background thread to do the main processing and only renders on the gl thread.
 		INFO_LOG(Log::System, "Initializing GL graphics context");
 		graphicsContext = new QtGLGraphicsContext();
-		std::string errorMessage;
-		graphicsContext->InitAPI(nullptr, nullptr, &errorMessage);
-		graphicsContext->InitSurface(WINDOWSYSTEM_NONE, nullptr, nullptr, &errorMessage);
 		INFO_LOG(Log::System, "Using thread, starting emu thread");
-		emuThread_ = EmuThread_Start(graphicsContext, new NativeApplication(), [this](){
-			updateAccelerometer();
-		});
+		EmuThreadStart();
 	} else {
 		INFO_LOG(Log::System, "Not using thread, backend=%d", (int)g_Config.iGPUBackend);
 	}
+	graphicsContext->ThreadStart();
 }
 
 void MainUI::paintGL() {
@@ -888,11 +919,11 @@ void MainUI::paintGL() {
 	SDL_PumpEvents();
 #endif
 	updateAccelerometer();
-	if (graphicsContext->NeedsSeparateEmuThread()) {
+	if (emuThreadState == (int)EmuThreadState::DISABLED) {
+		NativeFrame(graphicsContext);
+	} else {
 		graphicsContext->ThreadFrame(true);
 		// Do the rest in EmuThreadFunc
-	} else {
-		NativeFrame(graphicsContext);
 	}
 }
 
@@ -950,6 +981,7 @@ void MainAudio::timerEvent(QTimerEvent *) {
 }
 
 #endif
+
 
 void QTCamera::startCamera(int width, int height) {
 	__qt_startCapture(width, height);

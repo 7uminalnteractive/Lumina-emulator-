@@ -29,6 +29,7 @@
 #include "Common/Math/curves.h"
 #include "Common/Net/URL.h"
 #include "Common/File/FileUtil.h"
+#include "Common/File/DirListing.h"
 #include "Common/TimeUtil.h"
 #include "Common/StringUtils.h"
 #include "Common/System/OSD.h"
@@ -730,6 +731,36 @@ static bool IsValidPBP(const Path &path, bool allowHomebrew) {
 	return true;
 }
 
+// Lumina: some extraction tools produce a folder named after the game that directly
+// contains a loose .iso/.cso/.chd (instead of an EBOOT.PBP or PSP_GAME/SYSDIR structure).
+// PPSSPP's stock folder-scan only recognizes those two layouts, so such folders were only
+// ever shown as plain, non-launchable navigation folders. This looks one level inside a
+// folder for exactly one disc image and, if found, returns its path so the folder itself
+// can be treated as a launchable game entry.
+static bool FindDiscImageInFolder(const Path &folderPath, Path *outImagePath) {
+	std::vector<File::FileInfo> inner;
+	if (!File::GetFilesInDir(folderPath, &inner, "iso:cso:chd:"))
+		return false;
+
+	Path found;
+	int count = 0;
+	for (const auto &f : inner) {
+		if (f.isDirectory)
+			continue;
+		found = f.fullName;
+		count++;
+		if (count > 1)
+			break;
+	}
+
+	// Only auto-detect when unambiguous: exactly one disc image inside the folder.
+	if (count == 1) {
+		*outImagePath = found;
+		return true;
+	}
+	return false;
+}
+
 void GameBrowser::Refresh() {
 	using namespace UI;
 
@@ -862,6 +893,7 @@ void GameBrowser::Refresh() {
 		for (size_t i = 0; i < fileInfo.size(); i++) {
 			bool isGame = !fileInfo[i].isDirectory;
 			bool isSaveData = false;
+			Path discImagePath;
 			// Check if eboot directory. TODO: Should ideally be done off-thread somehow.
 			if (!isGame && path_.GetPath().size() >= 4 && IsValidPBP(path_.GetPath() / fileInfo[i].name / "EBOOT.PBP", true))
 				isGame = true;
@@ -869,11 +901,20 @@ void GameBrowser::Refresh() {
 				isGame = true;
 			else if (!isGame && File::Exists(path_.GetPath() / fileInfo[i].name / "PARAM.SFO"))
 				isSaveData = true;
+			// Lumina: extracted-ISO folders. Some tools extract a game into its own folder
+			// containing a loose .iso/.cso/.chd rather than an EBOOT.PBP/PSP_GAME layout.
+			// Without this, such folders showed up as plain unclickable navigation folders.
+			else if (!isGame && FindDiscImageInFolder(fileInfo[i].fullName, &discImagePath))
+				isGame = true;
 
 			if (!isGame && !isSaveData) {
 				if (browseFlags_ & BrowseFlags::NAVIGATE) {
 					dirButtons.push_back(new DirButton(fileInfo[i].fullName, fileInfo[i].name, *gridStyle_, new UI::LinearLayoutParams(UI::FILL_PARENT, UI::FILL_PARENT)));
 				}
+			} else if (isGame && !discImagePath.empty()) {
+				// Launch the disc image found inside the folder, not the folder itself.
+				// Hold-to-show-options stays enabled, same as any regular game entry.
+				gameButtons.push_back(new GameButton(discImagePath, *gridStyle_, new UI::LinearLayoutParams(*gridStyle_ == true ? UI::WRAP_CONTENT : UI::FILL_PARENT, UI::WRAP_CONTENT)));
 			} else {
 				gameButtons.push_back(new GameButton(fileInfo[i].fullName, *gridStyle_, new UI::LinearLayoutParams(*gridStyle_ == true ? UI::WRAP_CONTENT : UI::FILL_PARENT, UI::WRAP_CONTENT)));
 			}

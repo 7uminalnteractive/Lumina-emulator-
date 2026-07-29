@@ -187,7 +187,13 @@
     <ClCompile Include="CaptureDevice.cpp">
       <Filter>Windows\Input</Filter>
     </ClCompile>
+    <ClCompile Include="GPU\WindowsVulkanContext.cpp">
+      <Filter>Windows\System</Filter>
+    </ClCompile>
     <ClCompile Include="..\android\jni\AndroidJavaGLContext.cpp">
+      <Filter>Other Platforms\Android</Filter>
+    </ClCompile>
+    <ClCompile Include="..\android\jni\AndroidVulkanContext.cpp">
       <Filter>Other Platforms\Android</Filter>
     </ClCompile>
     <ClCompile Include="..\android\jni\app-android.cpp">
@@ -224,6 +230,9 @@
       <Filter>Other Platforms\SDL</Filter>
     </ClCompile>
     <ClCompile Include="..\SDL\SDLMain.cpp">
+      <Filter>Other Platforms\SDL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL\SDLVulkanGraphicsContext.cpp">
       <Filter>Other Platforms\SDL</Filter>
     </ClCompile>
     <ClCompile Include="..\UWP\NKCodeFromWindowsSystem.cpp">
@@ -378,6 +387,9 @@
     <ClInclude Include="GPU\WindowsGLContext.h">
       <Filter>Windows\System</Filter>
     </ClInclude>
+    <ClInclude Include="GPU\WindowsGraphicsContext.h">
+      <Filter>Windows\System</Filter>
+    </ClInclude>
     <ClInclude Include="..\Qt\mainwindow.h">
       <Filter>Other Platforms\Qt</Filter>
     </ClInclude>
@@ -397,7 +409,16 @@
     <ClInclude Include="BufferLock.h">
       <Filter>Windows\Input</Filter>
     </ClInclude>
+    <ClInclude Include="GPU\WindowsVulkanContext.h">
+      <Filter>Windows\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\android\jni\AndroidGraphicsContext.h">
+      <Filter>Other Platforms\Android</Filter>
+    </ClInclude>
     <ClInclude Include="..\android\jni\AndroidJavaGLContext.h">
+      <Filter>Other Platforms\Android</Filter>
+    </ClInclude>
+    <ClInclude Include="..\android\jni\AndroidVulkanContext.h">
       <Filter>Other Platforms\Android</Filter>
     </ClInclude>
     <ClInclude Include="..\android\jni\app-android.h">
@@ -467,6 +488,9 @@
       <Filter>Other Platforms\SDL</Filter>
     </ClInclude>
     <ClInclude Include="..\SDL\SDLJoystick.h">
+      <Filter>Other Platforms\SDL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SDL\SDLVulkanGraphicsContext.h">
       <Filter>Other Platforms\SDL</Filter>
     </ClInclude>
     <ClInclude Include="..\UWP\NKCodeFromWindowsSystem.h">

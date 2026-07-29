@@ -34,7 +34,7 @@ QTM_USE_NAMESPACE
 #include "Common/Net/Resolve.h"
 #include "NKCodeFromQt.h"
 
-#include "Common/GPU/GraphicsContext.h"
+#include "Common/GraphicsContext.h"
 #include "Core/Core.h"
 #include "Core/Config.h"
 #include "Core/ConfigValues.h"
@@ -47,30 +47,27 @@ void SimulateGamepad();
 
 class QtGLGraphicsContext : public GraphicsContext {
 public:
-	bool InitAPI(void *wnd, std::string *deviceName, std::string *errorMessage) override {
+	QtGLGraphicsContext() {
 		CheckGLExtensions();
-		SetGPUBackend(GPUBackend::OPENGL);
-		// Not used in this context.
-		return true;
-	}
-
-	bool InitSurface(WindowSystem winsys, void *data1, void *data2, std::string *errorMessage) override {
-		// Not used in this context.
 		draw_ = Draw::T3DCreateGLContext(false);
+		SetGPUBackend(GPUBackend::OPENGL);
 		renderManager_ = (GLRenderManager *)draw_->GetNativeObject(Draw::NativeObject::RENDER_MANAGER);
 		renderManager_->SetInflightFrames(g_Config.iInflightFrames);
 		bool success = draw_->CreatePresets();
 		_assert_msg_(success, "Failed to compile preset shaders");
-		return true;
+
+		// TODO: Need to figure out how to implement SetSwapInterval for Qt.
 	}
 
-	bool NeedsSeparateEmuThread() const override { return true; }
-
-	void ShutdownSurface() override {
+	~QtGLGraphicsContext() {
 		delete draw_;
 		draw_ = nullptr;
 		renderManager_ = nullptr;
 	}
+
+	bool NeedsRenderThread() const override { return true; }
+
+	void Shutdown() override {}
 	void Resize() override {}
 
 	Draw::DrawContext *GetDrawContext() override {
@@ -104,7 +101,8 @@ enum class EmuThreadState {
 
 
 // GUI, thread manager
-class MainUI : public QGLWidget {
+class MainUI : public QGLWidget
+{
 	Q_OBJECT
 public:
 	explicit MainUI(QWidget *parent = 0);
@@ -129,6 +127,11 @@ protected:
 
 	void updateAccelerometer();
 
+	void EmuThreadFunc();
+	void EmuThreadStart();
+	void EmuThreadStop();
+	void EmuThreadJoin();
+
 private:
 	bool HandleCustomEvent(QEvent *e);
 	QtGLGraphicsContext *graphicsContext;
@@ -138,7 +141,8 @@ private:
 	QAccelerometer* acc;
 #endif
 
-	std::thread emuThread_;
+	std::thread emuThread;
+	std::atomic<int> emuThreadState;
 };
 
 class QTCamera : public QObject {

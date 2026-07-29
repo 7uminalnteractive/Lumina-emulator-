@@ -30,11 +30,10 @@
 #include "Common/TimeUtil.h"
 #include "Common/Input/InputState.h"
 #include "Common/Input/KeyCodes.h"
-#include "Common/GPU/GraphicsContext.h"
+#include "Common/GraphicsContext.h"
 
 #include "Core/Config.h"
 #include "Core/ConfigValues.h"
-#include "Core/EmuThread.h"
 #include "Core/KeyMap.h"
 #include "Core/System.h"
 
@@ -46,43 +45,27 @@ class IOSGLESContext : public GraphicsContext {
 public:
 	IOSGLESContext() {
 		CheckGLExtensions();
+		draw_ = Draw::T3DCreateGLContext(false);
+		renderManager_ = (GLRenderManager *)draw_->GetNativeObject(Draw::NativeObject::RENDER_MANAGER);
+		renderManager_->SetInflightFrames(g_Config.iInflightFrames);
 		SetGPUBackend(GPUBackend::OPENGL);
+		bool success = draw_->CreatePresets();
+		_assert_msg_(success, "Failed to compile preset shaders");
 	}
 	~IOSGLESContext() {
 		delete draw_;
 	}
-
-	bool InitAPI(void *wnd, std::string *deviceNameSetting, std::string *error_message) override {
-		// Nothing to do here, we already initialized in the constructor.
-		return true;
-	}
-	bool InitSurface(WindowSystem winsys, void *data1, void *data2, std::string *error_message) override {
-		draw_ = Draw::T3DCreateGLContext(false);
-		renderManager_ = (GLRenderManager *)draw_->GetNativeObject(Draw::NativeObject::RENDER_MANAGER);
-		renderManager_->SetInflightFrames(g_Config.iInflightFrames);
-		bool success = draw_->CreatePresets();
-		_assert_msg_(success, "Failed to compile preset shaders");
-		return true;
-	}
-
-	void ShutdownSurface() override {
-		// Nothing to do here, we already initialized in the constructor.
-		if (draw_) {
-			delete draw_;
-			draw_ = nullptr;
-		}
-		renderManager_ = nullptr;
-	}
-	void ShutdownAPI() override {
-		// Nothing to do here.
-	}
-
-	bool NeedsSeparateEmuThread() const override { return true; }
+	bool NeedsRenderThread() const override { return true; }
 	Draw::DrawContext *GetDrawContext() override {
 		return draw_;
 	}
 
 	void Resize() override {}
+	void Shutdown() override {}
+
+	void BeginShutdown() {
+		renderManager_->SetSkipGLCalls();
+	}
 
 	void ThreadStart() override {
 		renderManager_->ThreadStart(draw_);
@@ -96,9 +79,8 @@ public:
 		renderManager_->ThreadEnd();
 	}
 
-protected:
-	void BeginShutdown() {
-		renderManager_->SetSkipGLCalls();
+	void StartThread() {
+		renderManager_->StartThread();
 	}
 
 private:
@@ -106,8 +88,9 @@ private:
 	GLRenderManager *renderManager_;
 };
 
+static std::atomic<bool> exitRenderLoop;
 static std::atomic<bool> renderLoopRunning;
-static std::thread g_emuThread;
+static std::thread g_renderLoopThread;
 
 PPSSPPBaseViewController *sharedViewController;
 
@@ -137,25 +120,61 @@ PPSSPPBaseViewController *sharedViewController;
 	return self;
 }
 
+// The actual rendering is NOT on this thread, this is the emu thread
+// that runs game logic.
+void GLRenderLoop(IOSGLESContext *graphicsContext) {
+	SetCurrentThreadName("EmuThreadGL");
+	renderLoopRunning = true;
+
+	NativeInitGraphics(graphicsContext);
+
+	INFO_LOG(Log::System, "Emulation thread starting\n");
+	while (!exitRenderLoop) {
+		NativeFrame(graphicsContext);
+	}
+
+	INFO_LOG(Log::System, "Emulation thread shutting down\n");
+	NativeShutdownGraphics(graphicsContext);
+
+	// Also ask the main thread to stop, so it doesn't hang waiting for a new frame.
+	INFO_LOG(Log::System, "Emulation thread stopping\n");
+
+	exitRenderLoop = false;
+	renderLoopRunning = false;
+}
+
 - (bool)runGLRenderLoop {
 	if (!graphicsContext) {
-		ERROR_LOG(Log::G3D, "runGLRenderLoop: Tried to enter without a created graphics context.");
+		ERROR_LOG(Log::G3D, "runVulkanRenderLoop: Tried to enter without a created graphics context.");
 		return false;
 	}
 
-	if (g_emuThread.joinable()) {
-		ERROR_LOG(Log::G3D, "runGLRenderLoop: Already running");
+	if (g_renderLoopThread.joinable()) {
+		ERROR_LOG(Log::G3D, "runVulkanRenderLoop: Already running");
 		return false;
 	}
 
-	g_emuThread = EmuThread_Start(graphicsContext, new NativeApplication(), [](){});
+	_dbg_assert_(!renderLoopRunning);
+	_dbg_assert_(!exitRenderLoop);
+
+	graphicsContext->StartThread();
+
+	g_renderLoopThread = std::thread(GLRenderLoop, graphicsContext);
 	return true;
 }
 
 - (void)requestExitGLRenderLoop {
-	_assert_(g_emuThread.joinable());
-	EmuThread_Join(graphicsContext, g_emuThread);
-	_assert_(!g_emuThread.joinable());
+	if (!renderLoopRunning) {
+		ERROR_LOG(Log::System, "Render loop already exited");
+		return;
+	}
+	_assert_(g_renderLoopThread.joinable());
+	exitRenderLoop = true;
+	graphicsContext->ThreadFrameUntilCondition([]() -> bool {
+		return !renderLoopRunning.load();
+	});
+	g_renderLoopThread.join();
+	_assert_(!g_renderLoopThread.joinable());
 }
 
 - (void)viewDidLoad {
@@ -204,14 +223,11 @@ PPSSPPBaseViewController *sharedViewController;
 
 	graphicsContext = new IOSGLESContext();
 
-	std::string errorMessage;
-	if (!graphicsContext->InitAPI(nullptr, nullptr, &errorMessage)) {
-		ERROR_LOG(Log::G3D, "InitAPI failed: %s", errorMessage.c_str());
-	}
+	graphicsContext->GetDrawContext()->SetErrorCallback([](const char *shortDesc, const char *details, void *userdata) {
+		g_OSD.Show(OSDType::MESSAGE_ERROR, details, 0.0f, "error_callback");
+	}, nullptr);
 
-	if (!graphicsContext->InitSurface(WINDOWSYSTEM_NONE, nullptr, nullptr, &errorMessage)) {
-		ERROR_LOG(Log::G3D, "InitAPI failed: %s", errorMessage.c_str());
-	}
+	graphicsContext->ThreadStart();
 
 	/*self.iCadeView = [[iCadeReaderView alloc] init];
 	[self.view addSubview:self.iCadeView];
@@ -285,7 +301,7 @@ PPSSPPBaseViewController *sharedViewController;
 }
 
 - (void)glkView:(GLKView *)view drawInRect:(CGRect)rect {
-	if (!g_emuThread.joinable()) {
+	if (!renderLoopRunning) {
 		INFO_LOG(Log::G3D, "Ignoring drawInRect");
 		return;
 	}
@@ -334,8 +350,14 @@ PPSSPPBaseViewController *sharedViewController;
 
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 
-	graphicsContext->ShutdownSurface();
-	graphicsContext->ShutdownAPI();
+	graphicsContext->BeginShutdown();
+	// Skipping GL calls here because the old context is lost.
+	graphicsContext->ThreadFrameUntilCondition([]() -> bool {
+		return !renderLoopRunning;
+	});
+	graphicsContext->ThreadEnd();
+
+	graphicsContext->Shutdown();
 	delete graphicsContext;
 	graphicsContext = nullptr;
 	INFO_LOG(Log::System, "Done shutting down GL");

@@ -78,7 +78,7 @@
 #include "Windows/GEDebugger/GEDebugger.h"
 #include "Windows/GPU/WindowsGLContext.h"
 #endif
-#include "Common/GPU/Vulkan/VulkanGraphicsContext.h"
+#include "Windows/GPU/WindowsVulkanContext.h"
 #include "Windows/GPU/D3D11Context.h"
 
 #include "Windows/W32Util/ContextMenu.h"
@@ -656,7 +656,9 @@ static std::wstring MakeWindowsFilter(BrowseFileType type) {
 bool System_MakeRequest(SystemRequestType type, int requestId, const std::string &param1, const std::string &param2, int64_t param3, int64_t param4) {
 	switch (type) {
 	case SystemRequestType::EXIT_APP:
-		PostMessage(MainWindow::GetHWND(), MainWindow::WM_USER_DESTROY, 0, 0);
+		if (!NativeIsRestarting()) {
+			PostMessage(MainWindow::GetHWND(), MainWindow::WM_USER_DESTROY, 0, 0);
+		}
 		return true;
 	case SystemRequestType::RESTART_APP:
 	{
@@ -1026,32 +1028,70 @@ static void WinMainCleanup() {
 	}
 }
 
-static GraphicsContext *CreateGraphicsContext(GPUBackend backend, std::string **deviceName) {
-	GraphicsContext *graphicsContext = nullptr;
-	switch (backend) {
+bool CreateGraphicsBackend(std::string *error_message, GraphicsContext **ctx) {
+	WindowsGraphicsContext *graphicsContext = nullptr;
+	switch (g_Config.iGPUBackend) {
 #if PPSSPP_API(ANY_GL)
-	case GPUBackend::OPENGL:
+	case (int)GPUBackend::OPENGL:
 		graphicsContext = new WindowsGLContext();
-		*deviceName = nullptr;
 		break;
 #endif
-	case GPUBackend::DIRECT3D11:
+	case (int)GPUBackend::DIRECT3D11:
 		graphicsContext = new D3D11Context();
-		*deviceName = &g_Config.sD3D11Device;
 		break;
-	case GPUBackend::VULKAN:
+	case (int)GPUBackend::VULKAN:
+		graphicsContext = new WindowsVulkanContext();
+		break;
 	default:
-		graphicsContext = new VulkanGraphicsContext();
-		*deviceName = &g_Config.sVulkanDevice;
-		break;
+		return false;
 	}
-	return graphicsContext;
+
+	if (graphicsContext->Init(MainWindow::GetHInstance(), MainWindow::GetHWND(), error_message)) {
+		*ctx = graphicsContext;
+		return true;
+	} else {
+		delete graphicsContext;
+		*ctx = nullptr;
+		return false;
+	}
 }
 
-// This one will always exit or restart the app. No returns.
-void HandleGraphicsFailure(const std::string &errorMessage) {
+// returns null if failed.
+static GraphicsContext *CreateGraphicsContextOrExit() {
+	const bool performingRestart = NativeIsRestarting();
+
+	if (g_Config.sFailedGPUBackends.find("ALL") != std::string::npos) {
+		Reporting::ReportMessage("Graphics init error: %s", "ALL");
+
+		auto err = GetI18NCategory(I18NCat::ERRORS);
+		const char *defaultErrorAll = "PPSSPP failed to startup with any graphics backend. Try upgrading your graphics and other drivers.";
+		std::string_view genericError = err->T("GenericAllStartupError", defaultErrorAll);
+		std::wstring title = ConvertUTF8ToWString(err->T("GenericGraphicsError", "Graphics Error"));
+		MessageBox(0, ConvertUTF8ToWString(genericError).c_str(), title.c_str(), MB_OK);
+
+		// Let's continue (and probably crash) just so they have a way to keep trying.
+	}
+
+	System_Notify(SystemNotification::UI);
+
+	GraphicsContext *graphicsContext = nullptr;
+	std::string error_string;
+	const bool success = CreateGraphicsBackend(&error_string, &graphicsContext);
+	if (success) {
+		return graphicsContext;
+	}
+
+	// Before anything: are we restarting right now?
+	if (performingRestart) {
+		// Okay, switching graphics didn't work out.  Probably a driver bug - fallback to restart.
+		// This happens on NVIDIA when switching OpenGL -> Vulkan.
+		g_Config.Save("switch_graphics_failed");
+		W32Util::ExitAndRestart();
+		return nullptr;
+	}
+
 	auto err = GetI18NCategory(I18NCat::ERRORS);
-	Reporting::ReportMessage("Graphics init error: %s", errorMessage.c_str());
+	Reporting::ReportMessage("Graphics init error: %s", error_string.c_str());
 
 	const char *defaultErrorVulkan = "Failed initializing graphics. Try upgrading your graphics drivers.\n\nWould you like to try switching to OpenGL?\n\nError message:";
 	const char *defaultErrorOpenGL = "Failed initializing graphics. Try upgrading your graphics drivers.\n\nWould you like to try switching to DirectX 9?\n\nError message:";
@@ -1069,9 +1109,9 @@ void HandleGraphicsFailure(const std::string &errorMessage) {
 		genericError = err->T("GenericOpenGLError", defaultErrorOpenGL);
 		break;
 	}
-	std::string full_error = StringFromFormat("%.*s\n\n%s", (int)genericError.size(), genericError.data(), errorMessage.c_str());
+	std::string full_error = StringFromFormat("%.*s\n\n%s", (int)genericError.size(), genericError.data(), error_string.c_str());
 	std::wstring title = ConvertUTF8ToWString(err->T("GenericGraphicsError", "Graphics Error"));
-	const bool yes = IDYES == MessageBox(0, ConvertUTF8ToWString(full_error).c_str(), title.c_str(), MB_ICONERROR | MB_YESNO);
+	bool yes = IDYES == MessageBox(0, ConvertUTF8ToWString(full_error).c_str(), title.c_str(), MB_ICONERROR | MB_YESNO);
 	ERROR_LOG(Log::Boot, "%s", full_error.c_str());
 
 	if (yes) {
@@ -1082,12 +1122,12 @@ void HandleGraphicsFailure(const std::string &errorMessage) {
 		g_Config.Save("save_graphics_fallback");
 
 		W32Util::ExitAndRestart();
-		return;
+		return nullptr;
 	}
 
 	// No safe way out without graphics.
 	ExitProcess(1);
-	return;
+	return nullptr;
 }
 
 int WINAPI WinMain(HINSTANCE _hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLine, int iCmdShow) {
@@ -1170,16 +1210,6 @@ int WINAPI WinMain(HINSTANCE _hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLin
 
 	NativeInit((int)args.size(), args.data(), cmdLineOptions, "", "", nullptr);
 
-	// Report previous graphics init error to the user.
-	if (g_Config.sFailedGPUBackends.find("ALL") != std::string::npos) {
-		auto err = GetI18NCategory(I18NCat::ERRORS);
-		const char *defaultErrorAll = "PPSSPP failed to startup with any graphics backend. Try upgrading your graphics and other drivers.";
-		std::string_view genericError = err->T("GenericAllStartupError", defaultErrorAll);
-		std::wstring title = ConvertUTF8ToWString(err->T("GenericGraphicsError", "Graphics Error"));
-		MessageBox(0, ConvertUTF8ToWString(genericError).c_str(), title.c_str(), MB_OK);
-		// Let's continue (and probably crash) just so users have a way to keep trying.
-	}
-
 	// Consider at least the following cases before changing this code:
 	//   - By default in Release, the console should be hidden by default even if logging is enabled.
 	//   - By default in Debug, the console should be shown by default.
@@ -1229,21 +1259,16 @@ int WINAPI WinMain(HINSTANCE _hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLin
 	// The Emu thread calls NativeInit() and NativeMain() etc.
 
 	System_SetWindowTitle("");
-	System_Notify(SystemNotification::UI);
 
 	std::thread mainThread = std::thread([]() {
-		std::string errorMessage;
-		std::string *deviceNameSetting;
-		std::unique_ptr<GraphicsContext> graphicsContext(CreateGraphicsContext((GPUBackend)g_Config.iGPUBackend, &deviceNameSetting));
-		if (!graphicsContext->InitAPI(MainWindow::GetHWND(), deviceNameSetting, &errorMessage)) {
-			HandleGraphicsFailure(errorMessage);
+		NativeApplication application;
+		std::unique_ptr<GraphicsContext> graphicsContext(CreateGraphicsContextOrExit());
+		if (!graphicsContext) {
+			// We're screwed. Should never get here.
+			_dbg_assert_(false);
 			return;
 		}
-		if (!MainThreadFunc(graphicsContext.get(), new NativeApplication(), WINDOWSYSTEM_WIN32, MainWindow::GetHInstance(), MainWindow::GetHWND(), []() {})) {
-			HandleGraphicsFailure("Failed to initialize main thread function.");
-			return;
-		}
-		graphicsContext->ShutdownAPI();
+		MainThreadFunc(graphicsContext.get(), &application, []() {});
 		PostMessage(MainWindow::GetHWND(), MainWindow::WM_USER_UPDATE_UI, 0, 0);
 	});
 

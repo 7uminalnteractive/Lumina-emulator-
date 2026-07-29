@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Common/CommonWindows.h"
-#include "Common/GPU/GraphicsContext.h"
-#include "Common/GPU/MiscTypes.h"
+#include "Windows/GPU/WindowsGraphicsContext.h"
 
 namespace Draw {
 	class DrawContext;
@@ -10,17 +9,16 @@ namespace Draw {
 
 class GLRenderManager;
 
-class WindowsGLContext : public GraphicsContext {
+class WindowsGLContext : public WindowsGraphicsContext {
 public:
-	// This really means that rendering takes over the main/window thread, and will call ThreadStart/ThreadEnd/ThreadFrame
-	// and the caller needs to also spawn an emulation thread which will call the other APIs.
-	bool NeedsSeparateEmuThread() const override { return true; }
+	bool Init(HINSTANCE hInst, HWND window, std::string *error_message) override;
 
-	bool InitAPI(void *wnd, std::string *deviceName, std::string *errorMessage) override;
-	void ShutdownAPI() override;
+	bool NeedsRenderThread() const override { return true; }
 
-	bool InitSurface(WindowSystem winsys, void *data1, void *data2, std::string *errorMessage) override;
-	void ShutdownSurface() override;
+	bool InitFromRenderThread(std::string *errorMessage) override;
+	void ShutdownFromRenderThread() override;
+
+	void Shutdown() override;
 
 	void Poll() override;
 
@@ -30,7 +28,6 @@ public:
 	void Resume() override;
 	void Resize() override;
 
-	// If these are used, they are called from the render thread. If NeedsRenderThread is false, they are not called.
 	void ThreadStart() override;
 	void ThreadEnd() override;
 	bool ThreadFrame(bool waitIfEmpty) override;
@@ -47,8 +44,8 @@ private:
 	HDC hDC;     // Private GDI Device Context
 	HGLRC hRC;   // Permanent Rendering Context
 	HWND hWnd_;   // Holds Our Window Handle
-	volatile bool pauseRequested_;
-	volatile bool resumeRequested_;
+	volatile bool pauseRequested;
+	volatile bool resumeRequested;
 	HANDLE pauseEvent;
 	HANDLE resumeEvent;
 };

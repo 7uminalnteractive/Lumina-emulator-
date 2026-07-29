@@ -83,7 +83,7 @@
 #include "Common/StringUtils.h"
 #include "Common/Log/LogManager.h"
 #include "Common/MemArena.h"
-#include "Common/GPU/GraphicsContext.h"
+#include "Common/GraphicsContext.h"
 #include "Common/OSVersion.h"
 #include "Common/GPU/ShaderTranslation.h"
 #include "Common/VR/PPSSPPVR.h"
@@ -177,6 +177,7 @@ std::string config_filename;
 // Really need to clean this mess of globals up... but instead I add more :P
 bool g_TakeScreenshot;
 static bool resized = false;
+static bool restarting = false;
 
 static int renderCounter = 0;
 
@@ -774,6 +775,7 @@ void NativeInit(int argc, const char *argv[], const CommandLineOptions &cmdLineO
 	Achievements::Initialize();
 
 	// Must be done restarting by now.
+	restarting = false;
 	g_nativeMainThreadReady = true;
 }
 
@@ -1632,6 +1634,14 @@ void NativeResized() {
 	resized = true;
 }
 
+void NativeSetRestarting() {
+	restarting = true;
+}
+
+bool NativeIsRestarting() {
+	return restarting;
+}
+
 void NativeShutdown() {
 	INFO_LOG(Log::System, "NativeShutdown begin");
 	ClearAchievementsHostOverride();
@@ -1672,7 +1682,10 @@ void NativeShutdown() {
 	ShaderTranslationShutdown();
 
 	// Avoid shutting this down when restarting core.
-	g_logManager.Shutdown();
+	if (!restarting) {
+		g_logManager.Shutdown();
+	}
+
 	g_threadManager.Teardown();
 
 #if !PPSSPP_PLATFORM(IOS)

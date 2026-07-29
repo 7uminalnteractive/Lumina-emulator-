@@ -391,14 +391,14 @@ void __KernelMemoryShutdown()
 
 BlockAllocator *BlockAllocatorFromID(int id) {
 	switch (id) {
-	case KERNEL_PARTITION_ID:
+	case 1:
 	case 3:
 	case 4:
 		if (hleIsKernelMode())
 			return &kernelMemory;
 		return nullptr;
 
-	case USER_PARTITION_ID:
+	case 2:
 	case 6:
 		return &userMemory;
 
@@ -408,7 +408,7 @@ BlockAllocator *BlockAllocatorFromID(int id) {
 			return &userMemory;
 		return nullptr;
 
-	case VSHELL_PARTITION_ID:
+	case 5:
 		return &volatileMemory;
 
 	default:
@@ -420,11 +420,11 @@ BlockAllocator *BlockAllocatorFromID(int id) {
 
 int BlockAllocatorToID(const BlockAllocator *alloc) {
 	if (alloc == &kernelMemory)
-		return KERNEL_PARTITION_ID;
+		return 1;
 	if (alloc == &userMemory)
-		return USER_PARTITION_ID;
+		return 2;
 	if (alloc == &volatileMemory)
-		return VSHELL_PARTITION_ID;
+		return 5;
 	return 0;
 }
 

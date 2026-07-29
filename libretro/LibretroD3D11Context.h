@@ -7,7 +7,7 @@
 class LibretroD3D11Context : public LibretroHWRenderContext {
 public:
    LibretroD3D11Context() : LibretroHWRenderContext(RETRO_HW_CONTEXT_D3D11, 11) {}
-   bool InitAPI(void *wnd, std::string *deviceName, std::string *error_message) override;
+   bool Init() override;
 
    void SwapBuffers() override;
    void GotBackbuffer() override;

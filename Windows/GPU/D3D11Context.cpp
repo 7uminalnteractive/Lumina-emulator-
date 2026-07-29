@@ -76,14 +76,13 @@ HRESULT D3D11Context::CreateTheDevice(IDXGIAdapter *adapter) {
 	return hr;
 }
 
-bool D3D11Context::InitAPI(void *wnd, std::string *deviceName, std::string *errorMessage) {
+bool D3D11Context::Init(HINSTANCE hInst, HWND wnd, std::string *error_message) {
+	hWnd_ = wnd;
 	LoadD3D11Error result = LoadD3D11();
 
 	HRESULT hr = E_FAIL;
-	adapterNames_.clear();
-	chosenAdapterName_.clear();
-	adapterNames_.clear();
-
+	std::vector<std::string> adapterNames;
+	std::string chosenAdapterName;
 	if (result == LoadD3D11Error::SUCCESS) {
 		std::vector<ComPtr<IDXGIAdapter>> adapters;
 		int chosenAdapter = 0;
@@ -97,13 +96,13 @@ bool D3D11Context::InitAPI(void *wnd, std::string *deviceName, std::string *erro
 				DXGI_ADAPTER_DESC desc;
 				pAdapter->GetDesc(&desc);
 				std::string str = ConvertWStringToUTF8(desc.Description);
-				adapterNames_.push_back(str);
-				if (deviceName && str == *deviceName) {
+				adapterNames.push_back(str);
+				if (str == g_Config.sD3D11Device) {
 					chosenAdapter = i;
 				}
 			}
 			if (!adapters.empty()) {
-				chosenAdapterName_ = adapterNames_[chosenAdapter];
+				chosenAdapterName = adapterNames[chosenAdapter];
 				hr = CreateTheDevice(adapters[chosenAdapter].Get());
 				adapters.clear();
 			} else {
@@ -113,7 +112,7 @@ bool D3D11Context::InitAPI(void *wnd, std::string *deviceName, std::string *erro
 		}
 	}
 
-	if (hr == E_FAIL) {
+	if (FAILED(hr)) {
 		const char *defaultError = "Your GPU does not appear to support Direct3D 11.\n\nWould you like to try again using OpenGL instead?";
 		auto err = GetI18NCategory(I18NCat::ERRORS);
 
@@ -127,26 +126,22 @@ bool D3D11Context::InitAPI(void *wnd, std::string *deviceName, std::string *erro
 
 		error = ConvertUTF8ToWString(err->T("D3D11NotSupported", defaultError));
 		std::wstring title = ConvertUTF8ToWString(err->T("D3D11InitializationError", "Direct3D 11 initialization error"));
-		bool yes = IDYES == MessageBox((HWND)wnd, error.c_str(), title.c_str(), MB_ICONERROR | MB_YESNO);
+		bool yes = IDYES == MessageBox(hWnd_, error.c_str(), title.c_str(), MB_ICONERROR | MB_YESNO);
 		if (yes) {
 			// Change the config to OpenGL and restart.
 			g_Config.iGPUBackend = (int)GPUBackend::OPENGL;
 			g_Config.sFailedGPUBackends.clear();
 			g_Config.Save("save_d3d9_fallback");
+
 			W32Util::ExitAndRestart();
 		}
 		return false;
 	}
 
-	// Success, update the device name.
-	if (deviceName) {
-		*deviceName = chosenAdapterName_;
-	}
-
-	// Try to upgrade the D3D11 version.
 	if (FAILED(device_.As(&device1_))) {
 		device1_ = nullptr;
 	}
+
 	if (FAILED(context_.As(&context1_))) {
 		context1_ = nullptr;
 	}
@@ -160,15 +155,7 @@ bool D3D11Context::InitAPI(void *wnd, std::string *deviceName, std::string *erro
 		}
 	}
 #endif
-	return true;
-}
 
-bool D3D11Context::InitSurface(WindowSystem winsys, void *data1, void *data2, std::string *error_message) {
-	_dbg_assert_(winsys == WINDOWSYSTEM_WIN32);
-	HINSTANCE hInst = (HINSTANCE)data1;
-	HWND wnd = (HWND)data2;
-
-	hWnd_ = wnd;
 
 	int width;
 	int height;
@@ -177,7 +164,7 @@ bool D3D11Context::InitSurface(WindowSystem winsys, void *data1, void *data2, st
 	// Obtain DXGI factory from device (since we used nullptr for pAdapter above)
 	ComPtr<IDXGIFactory1> dxgiFactory;
 	ComPtr<IDXGIDevice> dxgiDevice;
-	HRESULT hr = device_.As(&dxgiDevice);
+	hr = device_.As(&dxgiDevice);
 	if (SUCCEEDED(hr)) {
 		ComPtr<IDXGIAdapter> adapter;
 		hr = dxgiDevice->GetAdapter(&adapter);
@@ -222,8 +209,8 @@ bool D3D11Context::InitSurface(WindowSystem winsys, void *data1, void *data2, st
 	hr = dxgiFactory->CreateSwapChain(device_.Get(), &swapChainDesc_, &swapChain_);
 	dxgiFactory->MakeWindowAssociation(hWnd_, DXGI_MWA_NO_ALT_ENTER);
 
-	draw_ = Draw::T3DCreateD3D11Context(device_, context_, device1_, context1_, swapChain_, featureLevel_, hWnd_, adapterNames_, g_Config.iInflightFrames);
-	SetGPUBackend(GPUBackend::DIRECT3D11, chosenAdapterName_);
+	draw_ = Draw::T3DCreateD3D11Context(device_, context_, device1_, context1_, swapChain_, featureLevel_, hWnd_, adapterNames, g_Config.iInflightFrames);
+	SetGPUBackend(GPUBackend::DIRECT3D11, chosenAdapterName);
 	bool success = draw_->CreatePresets();  // If we can run D3D11, there's a compiler installed. I think.
 	_assert_msg_(success, "Failed to compile preset shaders");
 
@@ -263,7 +250,7 @@ void D3D11Context::Resize() {
 	GotBackbuffer();
 }
 
-void D3D11Context::ShutdownSurface() {
+void D3D11Context::Shutdown() {
 	LostBackbuffer();
 
 	delete draw_;
@@ -271,9 +258,6 @@ void D3D11Context::ShutdownSurface() {
 
 	context_->ClearState();
 	context_->Flush();
-}
-
-void D3D11Context::ShutdownAPI() {
 #ifdef _DEBUG
 	if (d3dInfoQueue_) {
 		d3dInfoQueue_->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, false);

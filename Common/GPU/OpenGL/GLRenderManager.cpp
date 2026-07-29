@@ -163,6 +163,16 @@ bool GLRenderManager::ThreadFrame(bool waitIfEmpty) {
 	return true;
 }
 
+void GLRenderManager::StartThread() {
+	// There's not really a lot to do here anymore.
+	INFO_LOG(Log::G3D, "GLRenderManager::StartThread()");
+	if (!runCompileThread_) {
+		runCompileThread_ = true;
+	} else {
+		INFO_LOG(Log::G3D, "GL submission thread was already running.");
+	}
+}
+
 std::string GLRenderManager::GetGpuProfileString() const {
 	int curFrame = curFrame_;
 	const GLQueueProfileContext &profile = frameData_[curFrame].profile;

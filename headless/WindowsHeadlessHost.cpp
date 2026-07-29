@@ -39,7 +39,7 @@
 #include "Windows/GPU/WindowsGLContext.h"
 #endif
 #include "Windows/GPU/D3D11Context.h"
-#include "Common/GPU/Vulkan/VulkanGraphicsContext.h"
+#include "Windows/GPU/WindowsVulkanContext.h"
 
 const bool WINDOW_VISIBLE = false;
 const int WINDOW_WIDTH = 480;
@@ -75,7 +75,7 @@ bool WindowsHeadlessHost::InitGraphics(std::string *error_message, GraphicsConte
 		SetFocus(hWnd);
 	}
 
-	GraphicsContext *graphicsContext = nullptr;
+	WindowsGraphicsContext *graphicsContext = nullptr;
 	switch (gpuCore_) {
 	case GPUCORE_GLES:
 #if PPSSPP_API(ANY_GL)
@@ -88,15 +88,16 @@ bool WindowsHeadlessHost::InitGraphics(std::string *error_message, GraphicsConte
 		break;
 
 	case GPUCORE_VULKAN:
-		graphicsContext = new VulkanGraphicsContext();
+		graphicsContext = new WindowsVulkanContext();
 		break;
 	default:
 		_assert_(false);
 		break;
 	}
 
-	if (graphicsContext->InitAPI(hWnd, nullptr, error_message)) {
-		// Success
+	if (graphicsContext->Init(NULL, hWnd, error_message)) {
+		*ctx = graphicsContext;
+		gfx_ = graphicsContext;
 	} else {
 		delete graphicsContext;
 		*ctx = nullptr;
@@ -114,7 +115,7 @@ bool WindowsHeadlessHost::InitGraphics(std::string *error_message, GraphicsConte
 			threadState_ = RenderThreadState::STARTING;
 
 			std::string err;
-			if (!gfx_->InitSurface(WINDOWSYSTEM_WIN32, nullptr, hWnd, &err)) {
+			if (!gfx_->InitFromRenderThread(&err)) {
 				threadState_ = RenderThreadState::START_FAILED;
 				return;
 			}
@@ -125,19 +126,9 @@ bool WindowsHeadlessHost::InitGraphics(std::string *error_message, GraphicsConte
 
 			threadState_ = RenderThreadState::STOPPING;
 			gfx_->ThreadEnd();
-			gfx_->ShutdownSurface();
+			gfx_->ShutdownFromRenderThread();
 			threadState_ = RenderThreadState::STOPPED;
 		});
-	} else {
-		if (graphicsContext->InitSurface(WINDOWSYSTEM_WIN32, NULL, hWnd, error_message)) {
-			*ctx = graphicsContext;
-			gfx_ = graphicsContext;
-		} else {
-			delete graphicsContext;
-			*ctx = nullptr;
-			gfx_ = nullptr;
-			return false;
-		}
 	}
 
 	if (needRenderThread) {
@@ -157,12 +148,9 @@ void WindowsHeadlessHost::ShutdownGraphics() {
 		while (threadState_ != RenderThreadState::STOPPED && threadState_ != RenderThreadState::IDLE)
 			sleep_ms(1, "render-thread-stop-poll");
 		renderThread_.join();
-	} else {
-		gfx_->ShutdownSurface();
 	}
 
-	gfx_->ShutdownAPI();
-
+	gfx_->Shutdown();
 	delete gfx_;
 	gfx_ = nullptr;
 	DestroyWindow(hWnd);

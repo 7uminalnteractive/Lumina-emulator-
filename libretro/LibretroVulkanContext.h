@@ -5,9 +5,9 @@
 class LibretroVulkanContext : public LibretroHWRenderContext {
 public:
 	LibretroVulkanContext();
-   ~LibretroVulkanContext() override { ShutdownAPI(); }
-	bool InitAPI(void *wnd, std::string *deviceName, std::string *error_message) override;
-	void ShutdownAPI() override;
+   ~LibretroVulkanContext() override { Shutdown(); }
+	bool Init() override;
+	void Shutdown() override;
 	void SwapBuffers() override;
 
 	void *GetAPIContext() override;

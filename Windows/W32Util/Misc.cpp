@@ -192,6 +192,7 @@ namespace W32Util
 
 	void ExitAndRestart(bool overrideArgs, const std::string &args) {
 		SpawnNewInstance(overrideArgs, args);
+
 		ExitProcess(0);
 	}
 

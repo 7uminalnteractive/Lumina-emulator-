@@ -29,7 +29,7 @@
 #include "Common/GPU/OpenGL/GLRenderManager.h"
 #include "Common/File/VFS/VFS.h"
 #include "Common/File/VFS/DirectoryReader.h"
-#include "Common/GPU/GraphicsContext.h"
+#include "Common/GraphicsContext.h"
 #include "Common/TimeUtil.h"
 #include "Common/Thread/ThreadUtil.h"
 #include "Core/Config.h"
@@ -53,11 +53,9 @@ public:
 	GLDummyGraphicsContext() {}
 	~GLDummyGraphicsContext() { delete draw_; }
 
-	bool InitAPI(void *wnd, std::string *deviceNameSetting, std::string *errorMessage) override;
-	bool InitSurface(WindowSystem winsys, void *data1, void *data2, std::string *errorMessage) override;
+	bool InitFromRenderThread(std::string *errorMessage) override;
 
-
-	void ShutdownSurface() override {
+	void ShutdownFromRenderThread() override {
 		delete draw_;
 		draw_ = nullptr;
 
@@ -85,6 +83,7 @@ public:
 		renderManager_->ThreadEnd();
 	}
 
+	void Shutdown() override {}
 	void Resize() override {}
 
 private:
@@ -94,7 +93,7 @@ private:
 	SDL_GLContext glContext_;
 };
 
-bool GLDummyGraphicsContext::InitAPI(void *wnd, std::string *deviceName, std::string *errorMessage) {
+bool GLDummyGraphicsContext::InitFromRenderThread(std::string *errorMessage) {
 	SDL_Init(SDL_INIT_VIDEO);
 
 	// TODO
@@ -147,21 +146,16 @@ bool GLDummyGraphicsContext::InitAPI(void *wnd, std::string *deviceName, std::st
 #endif
 
 	CheckGLExtensions();
-	SetGPUBackend(GPUBackend::OPENGL);
 	draw_ = Draw::T3DCreateGLContext(false);
 	renderManager_ = (GLRenderManager *)draw_->GetNativeObject(Draw::NativeObject::RENDER_MANAGER);
 	renderManager_->SetInflightFrames(g_Config.iInflightFrames);
+	SetGPUBackend(GPUBackend::OPENGL);
 	bool success = draw_->CreatePresets();
 	_assert_(success);
 	renderManager_->SetSwapFunction([&]() {
 		SDL_GL_SwapWindow(screen_);
 	});
 	return success;
-}
-
-bool GLDummyGraphicsContext::InitSurface(WindowSystem winsys, void *data1, void *data2, std::string *errorMessage) {
-	// Not used in this context.
-	return true;
 }
 
 bool SDLHeadlessHost::InitGraphics(std::string *error_message, GraphicsContext **ctx, GPUCore core) {
@@ -171,14 +165,13 @@ bool SDLHeadlessHost::InitGraphics(std::string *error_message, GraphicsContext *
 
 	std::thread th([&]{
 		SetCurrentThreadName("SDL-RenderThread");
-		std::string errorMessage;
-		gfx_->InitAPI(nullptr, nullptr, &errorMessage);
+
 		while (threadState_ == RenderThreadState::IDLE)
 			sleep_ms(1, "sdl-idle-poll");
 		threadState_ = RenderThreadState::STARTING;
 
 		std::string err;
-		if (!gfx_->InitSurface(WINDOWSYSTEM_NONE, nullptr, nullptr, &err)) {
+		if (!gfx_->InitFromRenderThread(&err)) {
 			threadState_ = RenderThreadState::START_FAILED;
 			return;
 		}
@@ -189,7 +182,7 @@ bool SDLHeadlessHost::InitGraphics(std::string *error_message, GraphicsContext *
 
 		threadState_ = RenderThreadState::STOPPING;
 		gfx_->ThreadEnd();
-		gfx_->ShutdownSurface();
+		gfx_->ShutdownFromRenderThread();
 		threadState_ = RenderThreadState::STOPPED;
 	});
 	th.detach();
@@ -206,7 +199,7 @@ void SDLHeadlessHost::ShutdownGraphics() {
 	while (threadState_ != RenderThreadState::STOPPED && threadState_ != RenderThreadState::START_FAILED)
 		sleep_ms(1, "sdl-stop-poll");
 
-	gfx_->ShutdownAPI();
+	gfx_->Shutdown();
 	delete gfx_;
 	gfx_ = nullptr;
 }
