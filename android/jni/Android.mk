@@ -142,8 +142,7 @@ VULKAN_FILES := \
   $(SRC)/Common/GPU/Vulkan/VulkanMemory.cpp \
   $(SRC)/Common/GPU/Vulkan/VulkanDescSet.cpp \
   $(SRC)/Common/GPU/Vulkan/VulkanProfiler.cpp \
-  $(SRC)/Common/GPU/Vulkan/VulkanBarrier.cpp \
-  $(SRC)/Common/GPU/Vulkan/VulkanGraphicsContext.cpp
+  $(SRC)/Common/GPU/Vulkan/VulkanBarrier.cpp
 
 VMA_FILES := \
   $(SRC)/ext/vma/vk_mem_alloc.cpp
@@ -917,6 +916,7 @@ LOCAL_MODULE := ppsspp_jni
 LOCAL_SRC_FILES := \
   $(SRC)/android/jni/app-android.cpp \
   $(SRC)/android/jni/AndroidJavaGLContext.cpp \
+  $(SRC)/android/jni/AndroidVulkanContext.cpp \
   $(SRC)/android/jni/AndroidAudio.cpp \
   $(SRC)/android/jni/OpenSLContext.cpp \
   $(SRC)/UI/ImDebugger/ImDebugger.cpp \

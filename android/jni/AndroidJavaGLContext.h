@@ -1,19 +1,21 @@
 #pragma once
 
-#include "Common/GPU/GraphicsContext.h"
+#include "AndroidGraphicsContext.h"
 #include "Common/GPU/OpenGL/GLRenderManager.h"
 #include "Common/GPU/thin3d_create.h"
 
-class AndroidJavaEGLGraphicsContext : public GraphicsContext {
+class AndroidJavaEGLGraphicsContext : public AndroidGraphicsContext {
 public:
 	AndroidJavaEGLGraphicsContext();
 	~AndroidJavaEGLGraphicsContext() override { delete draw_; }
 
-	bool NeedsSeparateEmuThread() const override { return true; }
+	bool NeedsRenderThread() const override { return true; }
 
-	bool InitSurface(WindowSystem winsys, void *data1, void *data2, std::string *error_message) override;
-	void ShutdownSurface() override;
+	// This performs the actual initialization,
+	bool InitFromRenderThread(std::string *errorMessage) override;
+	void ShutdownFromRenderThread() override;
 
+	void Shutdown() override {}
 	void Resize() override {}
 
 	Draw::DrawContext *GetDrawContext() override {
@@ -28,13 +30,14 @@ public:
 		return renderManager_->ThreadFrame(waitIfEmpty);
 	}
 
+	void BeginAndroidShutdown() override {
+		renderManager_->SetSkipGLCalls();
+	}
+
 	void ThreadEnd() override {
 		renderManager_->ThreadEnd();
 	}
-protected:
-	void BeginShutdownSurface() override {
-		renderManager_->SetSkipGLCalls();
-	}
+
 private:
 	Draw::DrawContext *draw_ = nullptr;
 	GLRenderManager *renderManager_ = nullptr;
