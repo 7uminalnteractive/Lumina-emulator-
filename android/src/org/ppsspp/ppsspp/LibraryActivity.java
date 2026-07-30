@@ -61,16 +61,13 @@ public class LibraryActivity extends AppCompatActivity {
 
         View settingsButton = findViewById(R.id.btn_settings);
         settingsButton.setOnClickListener(v -> {
-            // Lumina: PpssppActivity is launchMode="singleInstance". If an instance is
-            // already alive in the background, Android reuses it via onNewIntent()
-            // instead of onCreate() - and onNewIntent() treats any shortcut param as a
-            // file path to boot (see PpssppActivity.onNewIntent / NativeApp "shortcutParam"
-            // message), not as a command-line flag. That silently broke "--start-screen=
-            // gamesettings", which only works when parsed fresh in onCreate(). Clearing
-            // the task ensures we always get a clean onCreate() so the flag is honored.
+            // Lumina: skip PPSSPP's MainScreen and jump straight to Settings.
+            // "--start-screen=gamesettings" is parsed on a fresh process boot
+            // (Core/CmdLine.cpp), and also explicitly handled as a native message
+            // (see app-android.cpp's "shortcutParam" handler) for the common case
+            // where PpssppActivity (launchMode="singleInstance") is already alive.
             Intent intent = new Intent(this, PpssppActivity.class);
             intent.putExtra(PpssppActivity.ARGS_EXTRA_KEY, "--start-screen=gamesettings");
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
         });
 

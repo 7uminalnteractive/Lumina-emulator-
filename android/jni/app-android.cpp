@@ -1515,8 +1515,22 @@ extern "C" void JNICALL Java_org_ppsspp_ppsspp_NativeApp_sendMessageFromJava(JNI
 			return;
 		}
 		INFO_LOG(Log::System, "shortcutParam received: %s", prm.c_str());
-		
+
 		prm = StripQuotes(prm);
+
+		// Lumina: this message is normally only used to boot a game from a launcher
+		// shortcut, always treating the parameter as a file path (see
+		// UIMessage::REQUEST_GAME_BOOT below). LibraryActivity's gear button reuses
+		// this same Java->native channel to request opening Settings directly, since
+		// on "secondary run" (process/activity already alive) that's the only channel
+		// available - the command-line parser in NativeApp.cpp's NativeInit() only
+		// runs once, on a fresh process. Handle that case explicitly here instead of
+		// letting it fall through as a (nonexistent) file to boot.
+		if (prm == "--start-screen=gamesettings") {
+			System_PostUIMessage(UIMessage::SHOW_SETTINGS, "");
+			return;
+		}
+
 		// NOTE: The parameter can be a file:// URL, which we need to take care of here. Similar to in NativeApp.cpp, search for file://
 		if (startsWith(prm, "file:///")) {
 			std::string param = prm;
