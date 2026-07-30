@@ -745,9 +745,15 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		// using Intent extra string. Intent extra will be null if launch normal
 		// (from app drawer or file explorer).
 		String shortcutParam = parseIntent(getIntent());
+		boolean openingDirectlyToSettings = false;
 		if (shortcutParam != null) {
 			Log.i(TAG, "Found Shortcut Parameter in data, passing on: " + shortcutParam);
 			setShortcutParam(shortcutParam);
+			// Lumina: the settings screen reads much better in portrait on a phone, and
+			// we don't want to touch the user's normal (usually landscape) orientation
+			// setting for actual gameplay - so only force it when we know we're
+			// launching straight into Settings via LibraryActivity's gear button.
+			openingDirectlyToSettings = shortcutParam.contains("--start-screen=gamesettings");
 		}
 
 		String achievementsHostOverride = AchievementsHostOverrideReceiver.getAchievementsHostOverride(this);
@@ -782,6 +788,9 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 
 		// OK, config should be initialized, we can query for screen rotation.
 		updateScreenRotation("onCreate");
+		if (openingDirectlyToSettings) {
+			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+		}
 		updateSustainedPerformanceMode();
 
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);
