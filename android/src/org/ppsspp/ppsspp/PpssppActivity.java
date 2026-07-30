@@ -173,6 +173,12 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 	public static final String ARGS_EXTRA_KEY = "org.ppsspp.ppsspp.Args";
 
 	private static boolean m_hasNoNativeBinary = false;
+	// Lumina: true when this launch is LibraryActivity's gear button jumping straight
+	// to Settings. Needs to be an instance field (not a local in onCreate) because
+	// updateScreenRotation() is also called from onResume(), which otherwise
+	// re-queries the native config and immediately reverts our forced portrait
+	// orientation back to landscape.
+	private boolean openingDirectlyToSettings = false;
 
 	public static boolean libraryLoaded = false;
 
@@ -619,6 +625,18 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 			}
 		}
 
+		// Lumina: keep Settings in portrait regardless of the user's normal (usually
+		// landscape) rotation setting. Without this early return, onResume() (called
+		// right after onCreate()) would immediately re-query the native config and
+		// revert back to landscape before the user ever sees the forced portrait.
+		if (openingDirectlyToSettings) {
+			if (getRequestedOrientation() != ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
+				Log.i(TAG, "Forcing portrait for Settings (" + cause + ")");
+				setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+			}
+			return;
+		}
+
 		// Query the native application on the desired rotation.
 		int rot;
 		String rotString = NativeApp.queryConfig("screenRotation");
@@ -745,7 +763,6 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		// using Intent extra string. Intent extra will be null if launch normal
 		// (from app drawer or file explorer).
 		String shortcutParam = parseIntent(getIntent());
-		boolean openingDirectlyToSettings = false;
 		if (shortcutParam != null) {
 			Log.i(TAG, "Found Shortcut Parameter in data, passing on: " + shortcutParam);
 			setShortcutParam(shortcutParam);
@@ -788,9 +805,6 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 
 		// OK, config should be initialized, we can query for screen rotation.
 		updateScreenRotation("onCreate");
-		if (openingDirectlyToSettings) {
-			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-		}
 		updateSustainedPerformanceMode();
 
 		setVolumeControlStream(AudioManager.STREAM_MUSIC);

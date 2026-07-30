@@ -1148,6 +1148,7 @@ static const ConfigSetting upgradeSettings[] = {
 
 static const ConfigSetting themeSettings[] = {
 	ConfigSetting("ThemeName", SETTING(g_Config, sThemeName), "Lumina", CfgFlag::DEFAULT),
+	ConfigSetting("LuminaThemeApplied", SETTING(g_Config, bLuminaThemeApplied), false, CfgFlag::DEFAULT),
 };
 
 static const ConfigSetting vrSettings[] = {
@@ -1348,6 +1349,17 @@ void Config::Load(const char *iniFileName, const char *controllerIniFilename) {
 	}
 
 	ReadAllSettings(iniFile);
+
+	// Lumina: sThemeName's CfgFlag::DEFAULT("Lumina") only kicks in when there's no
+	// saved ppsspp.ini yet. A config saved before this theme existed (or from an
+	// earlier build/test) would have "Default" (or empty) written to disk, which
+	// ReadAllSettings just loaded above, permanently shadowing our new default.
+	// Force it once, the same way a first-run default would apply, without
+	// stomping on a theme the user deliberately picked afterwards.
+	if (!bLuminaThemeApplied) {
+		sThemeName = "Lumina";
+		bLuminaThemeApplied = true;
+	}
 
 	iRunCount++;
 

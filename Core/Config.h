@@ -427,6 +427,11 @@ public:
 	int iDeveloperSettingsCurrentTab;
 
 	std::string sThemeName;
+	// Lumina: forces the Lumina theme once on devices that already had a saved
+	// config from before this default existed (sThemeName's CfgFlag::DEFAULT is
+	// only used when there's no saved ppsspp.ini yet, so a pre-existing config
+	// saved with the stock "Default" theme would otherwise never pick up Lumina).
+	bool bLuminaThemeApplied;
 
 	// These aren't saved, just for instant debugging.
 	bool bLogFrameDrops;
