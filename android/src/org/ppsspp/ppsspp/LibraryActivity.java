@@ -60,12 +60,22 @@ public class LibraryActivity extends AppCompatActivity {
         grantAccessButton.setOnClickListener(v -> requestStorageAccess());
 
         View settingsButton = findViewById(R.id.btn_settings);
-        settingsButton.setOnClickListener(v ->
-                startActivity(new Intent(this, PpssppActivity.class)));
+        settingsButton.setOnClickListener(v -> {
+            // Lumina: skip PPSSPP's MainScreen entirely and boot straight into the
+            // Settings screen, using the core's existing "--start-screen=gamesettings"
+            // command-line option (see Core/CmdLine.cpp and UI/NativeApp.cpp).
+            Intent intent = new Intent(this, PpssppActivity.class);
+            intent.putExtra(PpssppActivity.ARGS_EXTRA_KEY, "--start-screen=gamesettings");
+            startActivity(intent);
+        });
 
         View profileButton = findViewById(R.id.profile_avatar);
         profileButton.setOnClickListener(v ->
                 startActivity(new Intent(this, AccountActivity.class)));
+
+        View patchesTab = findViewById(R.id.tab_media);
+        patchesTab.setOnClickListener(v ->
+                startActivity(new Intent(this, PatchesActivity.class)));
 
         heroTitle.setText("Sua biblioteca");
         heroSubtitle.setText("Concedendo acesso, buscamos seus jogos automaticamente.");
@@ -111,50 +121,78 @@ public class LibraryActivity extends AppCompatActivity {
         folderLabel.setText("Armazenamento/PSP/GAME");
 
         new Thread(() -> {
-            File root = gamesFolder();
             List<GameItem> games = new ArrayList<>();
-            if (root.exists() && root.isDirectory()) {
-                collectGames(root, games, 0);
+            try {
+                File root = gamesFolder();
+                if (root.exists() && root.isDirectory()) {
+                    collectGames(root, games, 0);
+                }
+            } catch (Exception | StackOverflowError e) {
+                // Lumina: never let an unexpected error (permission denied on a
+                // subfolder, a broken symlink, too-deep recursion, etc.) kill the
+                // whole app. Log it and fall back to whatever we found so far.
+                android.util.Log.e("LibraryActivity", "Erro ao escanear jogos", e);
             }
 
+            List<GameItem> finalGames = games;
             runOnUiThread(() -> {
-                if (games.isEmpty()) {
+                if (finalGames.isEmpty()) {
                     showEmptyState();
                 } else {
-                    showGames(games);
+                    showGames(finalGames);
                 }
             });
         }).start();
     }
 
     private void collectGames(File folder, List<GameItem> out, int depth) {
-        File[] children = folder.listFiles();
+        File[] children;
+        try {
+            children = folder.listFiles();
+        } catch (SecurityException e) {
+            // Some subfolders (e.g. Android/data, Android/obb) are off-limits even
+            // with MANAGE_EXTERNAL_STORAGE on newer Android versions. Skip them
+            // instead of crashing.
+            android.util.Log.w("LibraryActivity", "Sem acesso a: " + folder, e);
+            return;
+        }
         if (children == null) return;
 
         for (File child : children) {
-            if (child.isDirectory()) {
-                // Lumina: some extraction tools produce a folder containing a PSP_GAME
-                // subfolder (the same layout as a real UMD disc image extracted to disk),
-                // e.g. "PSP/GAME/<Game Name>/PSP_GAME/SYSDIR/EBOOT.BIN". PPSSPP's native
-                // core (Core/Loaders.cpp) already knows how to boot straight from such a
-                // folder, but this scan previously only matched loose .iso/.cso/etc. files,
-                // so these folders were silently skipped. Detect them here and treat the
-                // folder itself as the launchable game, without recursing further into it.
-                if (isExtractedUmdFolder(child)) {
-                    Uri cover = findCoverFor(folder, child.getName());
-                    out.add(new GameItem(child.getName(), Uri.fromFile(child), folderSizeBytes(child), "umd", cover));
+            try {
+                if (child.isDirectory()) {
+                    // Lumina: some extraction tools produce a folder containing a PSP_GAME
+                    // subfolder (the same layout as a real UMD disc image extracted to disk),
+                    // e.g. "PSP/GAME/<Game Name>/PSP_GAME/SYSDIR/EBOOT.BIN". PPSSPP's native
+                    // core (Core/Loaders.cpp) already knows how to boot straight from such a
+                    // folder, but this scan previously only matched loose .iso/.cso/etc. files,
+                    // so these folders were silently skipped. Detect them here and treat the
+                    // folder itself as the launchable game, without recursing further into it.
+                    if (isExtractedUmdFolder(child)) {
+                        Uri cover = findCoverFor(folder, child.getName());
+                        out.add(new GameItem(child.getName(), Uri.fromFile(child), folderSizeBytes(child), "umd", cover));
+                        continue;
+                    }
+                    // Skip Android's own restricted directories to avoid SecurityExceptions
+                    // and pointless deep recursion into unrelated app data.
+                    if ("Android".equals(child.getName()) && depth == 0) {
+                        continue;
+                    }
+                    if (depth < MAX_SCAN_DEPTH) {
+                        collectGames(child, out, depth + 1);
+                    }
                     continue;
                 }
-                if (depth < MAX_SCAN_DEPTH) {
-                    collectGames(child, out, depth + 1);
+                String name = child.getName();
+                String ext = extensionOf(name);
+                if (SUPPORTED_EXTENSIONS.contains(ext)) {
+                    Uri cover = findCoverFor(folder, name);
+                    out.add(new GameItem(name, Uri.fromFile(child), child.length(), ext, cover));
                 }
-                continue;
-            }
-            String name = child.getName();
-            String ext = extensionOf(name);
-            if (SUPPORTED_EXTENSIONS.contains(ext)) {
-                Uri cover = findCoverFor(folder, name);
-                out.add(new GameItem(name, Uri.fromFile(child), child.length(), ext, cover));
+            } catch (Exception e) {
+                // Never let a single bad entry (unreadable file, broken symlink, etc.)
+                // abort the whole scan.
+                android.util.Log.w("LibraryActivity", "Erro ao processar: " + child, e);
             }
         }
     }
@@ -185,7 +223,8 @@ public class LibraryActivity extends AppCompatActivity {
 
     @Nullable
     private Uri findCoverFor(File folder, String gameFileName) {
-        String baseName = gameFileName.substring(0, gameFileName.lastIndexOf('.'));
+        int dot = gameFileName.lastIndexOf('.');
+        String baseName = dot > 0 ? gameFileName.substring(0, dot) : gameFileName;
 
         for (String imgExt : IMAGE_EXTENSIONS) {
             File candidate = new File(folder, baseName + "." + imgExt);
