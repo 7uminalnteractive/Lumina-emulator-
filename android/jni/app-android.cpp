@@ -1527,7 +1527,7 @@ extern "C" void JNICALL Java_org_ppsspp_ppsspp_NativeApp_sendMessageFromJava(JNI
 		// runs once, on a fresh process. Handle that case explicitly here instead of
 		// letting it fall through as a (nonexistent) file to boot.
 		if (prm == "--start-screen=gamesettings") {
-			System_PostUIMessage(UIMessage::SHOW_SETTINGS, "");
+			System_PostUIMessage(UIMessage::LUMINA_SHOW_SETTINGS_STANDALONE, "");
 			return;
 		}
 

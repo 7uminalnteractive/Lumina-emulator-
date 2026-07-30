@@ -31,6 +31,14 @@
 
 class Path;
 
+// Lumina: when true, closing GameSettingsScreen (whichever way it was opened -
+// pushed on top of a fresh MainScreen via the initial "--start-screen=gamesettings"
+// boot path, or via the LUMINA_SHOW_SETTINGS_STANDALONE message on an already-running
+// process) also exits the whole app, so the user returns to LibraryActivity (our Java
+// UI) instead of briefly seeing PPSSPP's stock, unskinned MainScreen underneath.
+// Set by whichever code path opens Settings via LibraryActivity's gear button.
+extern bool g_luminaCloseAppOnSettingsExit;
+
 // Per-game settings screen - enables you to configure graphic options, control options, etc
 // per game.
 class GameSettingsScreen : public UITabbedBaseDialogScreen {

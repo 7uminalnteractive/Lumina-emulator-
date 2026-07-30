@@ -112,6 +112,8 @@ void SetMemStickDirDarwin(int requesterToken) {
 }
 #endif
 
+bool g_luminaCloseAppOnSettingsExit = false;
+
 GameSettingsScreen::GameSettingsScreen(const Path &gamePath, std::string gameID, bool editThenRestore)
 	: UITabbedBaseDialogScreen(gamePath, &g_Config.iSettingsCurrentTab, TabDialogFlags::HorizontalOnlyIcons | TabDialogFlags::VerticalShowIcons), gameID_(gameID), editGameSpecificThenRestore_(editThenRestore) {
 	prevInflightFrames_ = g_Config.iInflightFrames;
@@ -139,6 +141,15 @@ GameSettingsScreen::~GameSettingsScreen() {
 		message += g_Config.memStickDirectory.ToVisualString();
 #endif
 		System_Toast(message);
+	}
+
+	// Lumina: if this Settings screen was opened directly via LibraryActivity's gear
+	// button (skipping PPSSPP's own MainScreen), close the whole app on exit instead
+	// of falling back to that unskinned MainScreen. The user's Android back stack
+	// already has LibraryActivity underneath, so this just returns them there.
+	if (g_luminaCloseAppOnSettingsExit) {
+		g_luminaCloseAppOnSettingsExit = false;
+		System_ExitApp();
 	}
 
 	if (editGameSpecificThenRestore_) {

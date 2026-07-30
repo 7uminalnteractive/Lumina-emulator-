@@ -311,6 +311,11 @@ enum class UIMessage {
 	RECENT_FILES_CHANGED,
 	SAVE_FRAME_DUMP,
 	ADHOC_SERVER_LIST_CHANGED,
+	// Lumina: opens straight into GameSettingsScreen (same as SHOW_SETTINGS), but
+	// additionally closes the whole PpssppActivity when that screen is exited,
+	// returning to LibraryActivity (our Java UI) instead of revealing PPSSPP's
+	// stock MainScreen underneath. Used only by LibraryActivity's gear button.
+	LUMINA_SHOW_SETTINGS_STANDALONE,
 };
 
 std::string System_GetProperty(SystemProperty prop);

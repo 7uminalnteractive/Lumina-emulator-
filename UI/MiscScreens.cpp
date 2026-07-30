@@ -80,6 +80,10 @@ void HandleCommonMessages(UIMessage message, const char *value, ScreenManager *m
 	} else if (message == UIMessage::SHOW_SETTINGS && isActiveScreen && std::string(activeScreen->tag()) != "GameSettings") {
 		UpdateUIState(UISTATE_MENU);
 		manager->push(new GameSettingsScreen(Path()));
+	} else if (message == UIMessage::LUMINA_SHOW_SETTINGS_STANDALONE && isActiveScreen && std::string(activeScreen->tag()) != "GameSettings") {
+		UpdateUIState(UISTATE_MENU);
+		g_luminaCloseAppOnSettingsExit = true;
+		manager->push(new GameSettingsScreen(Path()));
 	} else if (message == UIMessage::SHOW_LANGUAGE_SCREEN && isActiveScreen) {
 		auto sy = GetI18NCategory(I18NCat::SYSTEM);
 		auto langScreen = new NewLanguageScreen(sy->T("Language"));
@@ -371,6 +375,11 @@ void LogoScreen::Next() {
 			} else {
 				screenManager()->switchScreen(new MainScreen());
 			}
+			// Lumina: this path is only reached via "--start-screen=gamesettings" (see
+			// NativeApp.cpp), which LibraryActivity's gear button uses exclusively -
+			// so it's always safe to close the app on exit here too, same as the
+			// LUMINA_SHOW_SETTINGS_STANDALONE message path used on subsequent launches.
+			g_luminaCloseAppOnSettingsExit = true;
 			screenManager()->push(new GameSettingsScreen(gamePath));
 			break;
 		case AfterLogoScreen::MEMSTICK_SCREEN_INITIAL_SETUP:

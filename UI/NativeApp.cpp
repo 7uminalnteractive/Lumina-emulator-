@@ -133,6 +133,8 @@
 #include "UI/GPUDriverTestScreen.h"
 #include "UI/MiscScreens.h"
 #include "UI/MemStickScreen.h"
+#include "Core/Util/MemStick.h"
+#include "Common/File/AndroidStorage.h"
 #include "UI/OnScreenDisplay.h"
 #include "UI/RemoteISOScreen.h"
 #include "UI/Theme.h"
@@ -576,6 +578,22 @@ void NativeInit(int argc, const char *argv[], const CommandLineOptions &cmdLineO
 	// fail and it will be set to the default. Later, we load again when we get permission.
 	g_Config.Load(cmdLineOptions.configFilename.c_str(), cmdLineOptions.controlsConfigFilename.c_str());
 	System_Notify(SystemNotification::CONFIG_LOADED);
+
+#if PPSSPP_PLATFORM(ANDROID)
+	// Lumina: skip the "Welcome to PPSSPP! Choose where to keep PSP data" screen by
+	// defaulting straight to Armazenamento/PSP (the same folder layout the game
+	// library scan already expects), instead of asking the user to pick a folder on
+	// first run. If memStickDirectory is already set (returning user, or someone who
+	// explicitly changed it later), this does nothing.
+	if (g_Config.memStickDirectory.empty() && !g_externalDir.empty()) {
+		Path defaultMemStick = Path(g_externalDir) / "PSP";
+		if (SwitchMemstickFolderTo(defaultMemStick)) {
+			INFO_LOG(Log::System, "Lumina: defaulted memstick directory to '%s'", defaultMemStick.c_str());
+		} else {
+			WARN_LOG(Log::System, "Lumina: failed to default memstick directory to '%s', will show setup screen", defaultMemStick.c_str());
+		}
+	}
+#endif
 
 	// Apply parsed command line options to config.
 	cmdLineOptions.ApplyToConfig();
