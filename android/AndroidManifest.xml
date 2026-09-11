@@ -71,6 +71,16 @@
             android:screenOrientation="landscape"
             android:exported="false" />
         <activity
+            android:name=".ProfileSelectorActivity"
+            android:theme="@style/ppsspp_style"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+        <activity
+            android:name=".StoreActivity"
+            android:theme="@style/ppsspp_style"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+        <activity
             android:name=".AccountActivity"
             android:theme="@style/ppsspp_style"
             android:screenOrientation="landscape"

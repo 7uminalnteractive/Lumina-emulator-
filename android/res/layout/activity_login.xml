@@ -8,21 +8,32 @@
     <FrameLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="0.42"
-        android:background="@drawable/gmp_hero_bg">
+        android:layout_weight="0.46"
+        android:background="@drawable/gmp_login_hero_bg"
+        android:clipChildren="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="center_vertical"
-            android:padding="36dp">
+            android:paddingHorizontal="44dp"
+            android:paddingVertical="32dp">
 
-            <ImageView
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:src="@mipmap/ic_launcher"
-                android:layout_marginBottom="20dp" />
+            <FrameLayout
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:background="@drawable/gmp_logo_card_bg"
+                android:layout_marginBottom="24dp"
+                android:elevation="6dp">
+
+                <ImageView
+                    android:layout_width="42dp"
+                    android:layout_height="42dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/gmp_symbol" />
+
+            </FrameLayout>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -31,17 +42,73 @@
                 android:textColor="@android:color/white"
                 android:fontFamily="sans-serif-condensed"
                 android:textStyle="bold"
-                android:textSize="26sp"
+                android:textSize="30sp"
                 android:letterSpacing="0.02" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="12dp"
                 android:text="Seus jogos de PSP, sempre atualizados e prontos para jogar."
-                android:textColor="#CCFFFFFF"
-                android:textSize="14sp"
-                android:lineSpacingExtra="3dp" />
+                android:textColor="#D9FFFFFF"
+                android:textSize="15sp"
+                android:lineSpacingExtra="4dp"
+                android:maxWidth="280dp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="36dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginEnd="32dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="180+"
+                        android:textColor="@color/lumina_blue"
+                        android:textStyle="bold"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-condensed" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Patches"
+                        android:textColor="#B3FFFFFF"
+                        android:textSize="11sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="PSP"
+                        android:textColor="@color/lumina_blue"
+                        android:textStyle="bold"
+                        android:textSize="20sp"
+                        android:fontFamily="sans-serif-condensed" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="e PPSSPP"
+                        android:textColor="#B3FFFFFF"
+                        android:textSize="11sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
 
         </LinearLayout>
     </FrameLayout>
@@ -49,7 +116,7 @@
     <ScrollView
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="0.58"
+        android:layout_weight="0.54"
         android:fillViewport="true">
 
         <LinearLayout
@@ -57,8 +124,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center_vertical"
-            android:paddingHorizontal="48dp"
-            android:paddingVertical="24dp">
+            android:paddingHorizontal="52dp"
+            android:paddingVertical="28dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -71,15 +138,14 @@
                 android:textSize="11sp"
                 android:textStyle="bold"
                 android:letterSpacing="0.1"
-                android:layout_marginBottom="16dp" />
+                android:layout_marginBottom="18dp" />
 
             <TextView
-                android:id="@+id/login_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Bem-vindo de volta"
                 android:textColor="@color/lumina_text"
-                android:textSize="28sp"
+                android:textSize="30sp"
                 android:fontFamily="sans-serif-condensed"
                 android:textStyle="bold" />
 
@@ -87,90 +153,68 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:layout_marginBottom="26dp"
+                android:layout_marginBottom="32dp"
                 android:text="Entre na sua conta para acessar sua biblioteca."
                 android:textColor="@color/lumina_muted"
-                android:textSize="14sp" />
+                android:textSize="14.5sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="E-mail"
+                android:textColor="@color/lumina_text"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/email_field"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:hint="seuemail@gmail.com"
+                android:inputType="textEmailAddress"
+                android:textColor="@color/lumina_text"
+                android:textColorHint="@color/lumina_muted"
+                android:background="@drawable/gmp_input_bg"
+                android:textSize="15sp"
+                android:layout_marginBottom="20dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
-                <LinearLayout
+                <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:layout_marginEnd="12dp">
+                    android:text="Senha"
+                    android:textColor="@color/lumina_text"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="E-mail"
-                        android:textColor="@color/lumina_text"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="6dp" />
-
-                    <EditText
-                        android:id="@+id/email_field"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="seuemail@gmail.com"
-                        android:inputType="textEmailAddress"
-                        android:textColor="@color/lumina_text"
-                        android:textColorHint="@color/lumina_muted"
-                        android:background="@drawable/gmp_input_bg"
-                        android:textSize="14sp" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
+                <TextView
+                    android:id="@+id/forgot_password_link"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="6dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Senha"
-                            android:textColor="@color/lumina_text"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/forgot_password_link"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Esqueceu?"
-                            android:textColor="@color/lumina_blue"
-                            android:textSize="12sp" />
-
-                    </LinearLayout>
-
-                    <EditText
-                        android:id="@+id/password_field"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="Sua senha"
-                        android:inputType="textPassword"
-                        android:textColor="@color/lumina_text"
-                        android:textColorHint="@color/lumina_muted"
-                        android:background="@drawable/gmp_input_bg"
-                        android:textSize="14sp" />
-
-                </LinearLayout>
+                    android:text="Esqueceu a senha?"
+                    android:textColor="@color/lumina_blue"
+                    android:textSize="12.5sp" />
 
             </LinearLayout>
+
+            <EditText
+                android:id="@+id/password_field"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:hint="Digite sua senha"
+                android:inputType="textPassword"
+                android:textColor="@color/lumina_text"
+                android:textColorHint="@color/lumina_muted"
+                android:background="@drawable/gmp_input_bg"
+                android:textSize="15sp"
+                android:layout_marginBottom="18dp" />
 
             <CheckBox
                 android:id="@+id/stay_logged_in_checkbox"
@@ -178,17 +222,18 @@
                 android:layout_height="wrap_content"
                 android:text="Permanecer conectado"
                 android:textColor="@color/lumina_muted"
+                android:textSize="13.5sp"
                 android:checked="true"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="14dp" />
+                android:layout_marginBottom="22dp" />
 
             <TextView
                 android:id="@+id/login_error_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="@color/lumina_error"
+                android:textSize="13sp"
                 android:visibility="gone"
-                android:layout_marginBottom="10dp" />
+                android:layout_marginBottom="12dp" />
 
             <ProgressBar
                 android:id="@+id/login_progress"
@@ -196,18 +241,19 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:visibility="gone"
-                android:layout_marginBottom="10dp" />
+                android:layout_marginBottom="12dp" />
 
             <Button
                 android:id="@+id/login_button"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="56dp"
                 android:text="Entrar"
                 android:textAllCaps="false"
                 android:textStyle="bold"
-                android:paddingVertical="14dp"
+                android:textSize="15.5sp"
                 android:textColor="@color/lumina_on_accent"
-                android:background="@drawable/gmp_button_primary_bg" />
+                android:background="@drawable/gmp_button_primary_bg"
+                android:elevation="2dp" />
 
         </LinearLayout>
     </ScrollView>

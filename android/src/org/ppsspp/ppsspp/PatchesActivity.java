@@ -12,14 +12,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 /**
- * Lumina: hosts the site's "patches.html" page (free patches + Lumina+ / LPFL PRO) inside
- * the app, instead of reimplementing the catalog and subscription check natively.
- * lpfl-pro.html (linked from patches.html) already does the real subscription check
- * against Supabase, comparing the logged-in user's email against the "pedidos" table
- * (see lpfl-pro.html's verificarAssinatura()). We don't duplicate that logic here: we
- * just make sure the WebView is "logged in" the same way the site itself expects,
- * by writing the same localStorage key the site's own JS falls back to when there's
- * no full Supabase session (localStorage["lumina_email"], see lpfl-pro.html).
+ * GMP Gameport: hospeda a página de patches do site GMPES dentro do app via
+ * WebView, em vez de reimplementar o catálogo nativamente.
+ *
+ * NOTA: esta tela ainda aponta para o domínio antigo do fork Lumina
+ * (ver PATCHES_URL abaixo) e injeta o e-mail da conta ativa em
+ * localStorage["lumina_email"], que era a chave que o site antigo lia.
+ * Isso deve ser substituído quando a Loja de Games nativa (Fase C do
+ * redesign GMP Gameport) estiver pronta -- ver conversa sobre roadmap.
  */
 public class PatchesActivity extends AppCompatActivity {
 
@@ -47,7 +47,11 @@ public class PatchesActivity extends AppCompatActivity {
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true); // required for localStorage
 
-        String email = new SessionManager(this).getEmail();
+        String email = null;
+        LocalAccount active = new AccountStore(this).getActiveAccount();
+        if (active != null) {
+            email = active.email;
+        }
         loadWithSession(email);
     }
 

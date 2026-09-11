@@ -17,15 +17,14 @@ public class AccountActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_account);
 
-        SessionManager sessionManager = new SessionManager(this);
+        AccountStore accountStore = new AccountStore(this);
+        LocalAccount active = accountStore.getActiveAccount();
 
         TextView emailView = findViewById(R.id.account_email);
-        String email = sessionManager.getEmail();
-        emailView.setText(email != null ? email : "Conta Lumina");
+        emailView.setText(active != null ? active.email : "");
 
         TextView nameView = findViewById(R.id.account_name);
-        String displayName = sessionManager.getDisplayName();
-        nameView.setText(displayName != null ? displayName : "Bem-vindo(a)");
+        nameView.setText(active != null ? active.displayName : "Bem-vindo(a)");
 
         findViewById(R.id.btn_change_library_folder).setOnClickListener(v -> {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -36,8 +35,8 @@ public class AccountActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_logout).setOnClickListener(v -> {
-            sessionManager.clearSession();
-            Intent intent = new Intent(this, LoginActivity.class);
+            accountStore.clearActiveAccount();
+            Intent intent = new Intent(this, ProfileSelectorActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();

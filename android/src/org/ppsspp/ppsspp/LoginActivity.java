@@ -3,8 +3,6 @@ package org.ppsspp.ppsspp;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Patterns;
 import android.view.View;
@@ -17,6 +15,9 @@ import android.widget.Toast;
 
 public class LoginActivity extends Activity {
 
+    /** Quando true, veio do botão "+" do seletor de perfil (não pular auto-login). */
+    public static final String EXTRA_ADDING_ACCOUNT = "adding_account";
+
     private EditText emailField;
     private EditText passwordField;
     private CheckBox stayLoggedInCheckbox;
@@ -24,16 +25,26 @@ public class LoginActivity extends Activity {
     private ProgressBar progressBar;
     private TextView errorText;
 
-    private SessionManager sessionManager;
-    private SupabaseAuthClient authClient;
+    private AccountStore accountStore;
+    private AuthClient authClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        sessionManager = new SessionManager(this);
-        authClient = new SupabaseAuthClient();
+        accountStore = new AccountStore(this);
+        authClient = new AuthClient(accountStore);
+
+        boolean addingAccount = getIntent().getBooleanExtra(EXTRA_ADDING_ACCOUNT, false);
+
+        // Se já existe pelo menos uma conta salva e não é um "adicionar conta"
+        // explícito, pula direto para o seletor de perfil -- o usuário só
+        // preenche este formulário uma vez por conta.
+        if (!addingAccount && accountStore.hasAnyAccount()) {
+            goToProfileSelector();
+            return;
+        }
 
         emailField = findViewById(R.id.email_field);
         passwordField = findViewById(R.id.password_field);
@@ -46,31 +57,6 @@ public class LoginActivity extends Activity {
 
         TextView forgotPasswordLink = findViewById(R.id.forgot_password_link);
         forgotPasswordLink.setOnClickListener(v -> attemptPasswordReset());
-
-        if (sessionManager.hasSession()) {
-            tryAutoLogin();
-        }
-    }
-
-    private void tryAutoLogin() {
-        setLoading(true);
-        authClient.refreshSession(sessionManager.getRefreshToken(), new SupabaseAuthClient.AuthCallback() {
-            @Override
-            public void onSuccess(SupabaseAuthClient.AuthResult result) {
-                runOnUiThread(() -> {
-                    sessionManager.saveSession(result);
-                    goToMainApp();
-                });
-            }
-
-            @Override
-            public void onError(String message) {
-                runOnUiThread(() -> {
-                    sessionManager.clearSession();
-                    setLoading(false);
-                });
-            }
-        });
     }
 
     private void attemptLogin() {
@@ -90,24 +76,17 @@ public class LoginActivity extends Activity {
 
         setLoading(true);
 
-        authClient.signIn(email, password, new SupabaseAuthClient.AuthCallback() {
+        authClient.signIn(email, password, new AuthClient.AuthCallback() {
             @Override
-            public void onSuccess(SupabaseAuthClient.AuthResult result) {
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    setLoading(false);
-                    if (stayLoggedInCheckbox.isChecked()) {
-                        sessionManager.saveSession(result);
-                    }
-                    goToMainApp();
-                });
+            public void onSuccess(LocalAccount account) {
+                setLoading(false);
+                goToProfileSelector();
             }
 
             @Override
             public void onError(String message) {
-                new Handler(Looper.getMainLooper()).post(() -> {
-                    setLoading(false);
-                    showError(message);
-                });
+                setLoading(false);
+                showError(message);
             }
         });
     }
@@ -119,29 +98,16 @@ public class LoginActivity extends Activity {
             return;
         }
         setLoading(true);
-        authClient.sendPasswordReset(email, new SupabaseAuthClient.SimpleCallback() {
-            @Override
-            public void onSuccess() {
-                runOnUiThread(() -> {
-                    setLoading(false);
-                    Toast.makeText(LoginActivity.this,
-                            "Se esse e-mail tiver conta, enviamos um link de redefinição.",
-                            Toast.LENGTH_LONG).show();
-                });
-            }
-
-            @Override
-            public void onError(String message) {
-                runOnUiThread(() -> {
-                    setLoading(false);
-                    showError(message);
-                });
-            }
+        authClient.sendPasswordReset(email, () -> {
+            setLoading(false);
+            Toast.makeText(LoginActivity.this,
+                    "Ainda não temos envio de e-mail real -- essa parte chega junto com o backend.",
+                    Toast.LENGTH_LONG).show();
         });
     }
 
-    private void goToMainApp() {
-        Intent intent = new Intent(LoginActivity.this, LibraryActivity.class);
+    private void goToProfileSelector() {
+        Intent intent = new Intent(LoginActivity.this, ProfileSelectorActivity.class);
         startActivity(intent);
         finish();
     }

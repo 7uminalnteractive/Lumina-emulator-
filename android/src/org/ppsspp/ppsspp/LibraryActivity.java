@@ -79,6 +79,10 @@ public class LibraryActivity extends AppCompatActivity {
         patchesTab.setOnClickListener(v ->
                 startActivity(new Intent(this, PatchesActivity.class)));
 
+        View storeTab = findViewById(R.id.tab_store);
+        storeTab.setOnClickListener(v ->
+                startActivity(new Intent(this, StoreActivity.class)));
+
         heroTitle.setText("Sua biblioteca");
         heroSubtitle.setText("Concedendo acesso, buscamos seus jogos automaticamente.");
     }

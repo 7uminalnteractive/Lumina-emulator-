@@ -1147,7 +1147,7 @@ static const ConfigSetting upgradeSettings[] = {
 };
 
 static const ConfigSetting themeSettings[] = {
-	ConfigSetting("ThemeName", SETTING(g_Config, sThemeName), "Lumina", CfgFlag::DEFAULT),
+	ConfigSetting("ThemeName", SETTING(g_Config, sThemeName), "GMP Gameport", CfgFlag::DEFAULT),
 	ConfigSetting("LuminaThemeApplied", SETTING(g_Config, bLuminaThemeApplied), false, CfgFlag::DEFAULT),
 };
 
@@ -1350,14 +1350,14 @@ void Config::Load(const char *iniFileName, const char *controllerIniFilename) {
 
 	ReadAllSettings(iniFile);
 
-	// Lumina: sThemeName's CfgFlag::DEFAULT("Lumina") only kicks in when there's no
+	// GMP Gameport: sThemeName's CfgFlag::DEFAULT("GMP Gameport") only kicks in when there's no
 	// saved ppsspp.ini yet. A config saved before this theme existed (or from an
 	// earlier build/test) would have "Default" (or empty) written to disk, which
 	// ReadAllSettings just loaded above, permanently shadowing our new default.
 	// Force it once, the same way a first-run default would apply, without
 	// stomping on a theme the user deliberately picked afterwards.
 	if (!bLuminaThemeApplied) {
-		sThemeName = "Lumina";
+		sThemeName = "GMP Gameport";
 		bLuminaThemeApplied = true;
 	}
 
@@ -1416,11 +1416,6 @@ void Config::Load(const char *iniFileName, const char *controllerIniFilename) {
 		postShaderSetting->Set("ColorCorrectionSettingCurrentValue2", 1.5f);
 		postShaderSetting->Set("ColorCorrectionSettingCurrentValue3", 1.1f);
 		postShaderSetting->Set("ColorCorrectionSettingCurrentValue4", 1.0f);
-	} else if (!IsVREnabled() && !postShadersInitialized) {
-		// Default post-process chain for fresh installs: AMD FSR upscale + sharpen.
-		postShaderChain->Set("PostShader1", "FSR-EASU");
-		postShaderChain->Set("PostShader2", "FSR-RCAS");
-		postShaderSetting->Set("FSR-RCASSettingCurrentValue1", 0.5f);
 	}
 
 	// Load post process shader values
