@@ -45,53 +45,58 @@ Path FindConfigFile(const Path &searchPath, std::string_view baseFilename, bool 
 Path GetSysDirectory(PSPDirectories directoryType) {
 	const Path &memStickDirectory = g_Config.memStickDirectory;
 	Path pspDirectory;
-	if (!strcasecmp(memStickDirectory.GetFilename().c_str(), "PSP")) {
-		// Let's strip this off, to easily allow choosing a root directory named "PSP" on Android.
+	if (!strcasecmp(memStickDirectory.GetFilename().c_str(), "GMP")) {
+		// Let's strip this off, to easily allow choosing a root directory named "GMP" on Android.
 		pspDirectory = memStickDirectory;
 	} else {
-		pspDirectory = memStickDirectory / "PSP";
+		pspDirectory = memStickDirectory / "GMP";
 	}
 
+	// GMP Gameport: reorganized from the original 11 top-level PSP directories
+	// into 3 top-level folders (Jogo, Textura, Sistema). Everything that isn't
+	// game data, save data, or custom textures now lives under Sistema/, using
+	// the same internal subfolder names as before so nothing else downstream
+	// (savestate naming, cache paths, etc.) has to change.
 	switch (directoryType) {
 	case DIRECTORY_PSP:
 		return pspDirectory;
 	case DIRECTORY_CHEATS:
-		return pspDirectory / "Cheats";
+		return pspDirectory / "Sistema/Cheats";
 	case DIRECTORY_GAME:
-		return pspDirectory / "GAME";
+		return pspDirectory / "Jogo/Game";
 	case DIRECTORY_SAVEDATA:
-		return pspDirectory / "SAVEDATA";
+		return pspDirectory / "Jogo/Save";
 	case DIRECTORY_SCREENSHOT:
-		return pspDirectory / "SCREENSHOT";
+		return pspDirectory / "Sistema/SCREENSHOT";
 	case DIRECTORY_SYSTEM:
-		return pspDirectory / "SYSTEM";
+		return pspDirectory / "Sistema/SYSTEM";
 	case DIRECTORY_PAUTH:
 		return memStickDirectory / "PAUTH";  // This one's at the root...
 	case DIRECTORY_EXDATA:
 		return memStickDirectory / "EXDATA";  // This one's traditionally at the root...
 	case DIRECTORY_DUMP:
-		return pspDirectory / "SYSTEM/DUMP";
+		return pspDirectory / "Sistema/SYSTEM/DUMP";
 	case DIRECTORY_SAVESTATE:
-		return pspDirectory / "PPSSPP_STATE";
+		return pspDirectory / "Sistema/PPSSPP_STATE";
 	case DIRECTORY_CACHE:
-		return pspDirectory / "SYSTEM/CACHE";
+		return pspDirectory / "Sistema/SYSTEM/CACHE";
 	case DIRECTORY_TEXTURES:
-		return pspDirectory / "TEXTURES";
+		return pspDirectory / "Textura";
 	case DIRECTORY_PLUGINS:
-		return pspDirectory / "PLUGINS";
+		return pspDirectory / "Sistema/PLUGINS";
 	case DIRECTORY_APP_CACHE:
 		if (!g_Config.appCacheDirectory.empty()) {
 			return g_Config.appCacheDirectory;
 		}
-		return pspDirectory / "SYSTEM/CACHE";
+		return pspDirectory / "Sistema/SYSTEM/CACHE";
 	case DIRECTORY_VIDEO:
-		return pspDirectory / "VIDEO";
+		return pspDirectory / "Sistema/VIDEO";
 	case DIRECTORY_AUDIO:
-		return pspDirectory / "AUDIO";
+		return pspDirectory / "Sistema/AUDIO";
 	case DIRECTORY_CUSTOM_SHADERS:
-		return pspDirectory / "shaders";
+		return pspDirectory / "Sistema/shaders";
 	case DIRECTORY_CUSTOM_THEMES:
-		return pspDirectory / "themes";
+		return pspDirectory / "Sistema/themes";
 
 	case DIRECTORY_MEMSTICK_ROOT:
 		return g_Config.memStickDirectory;

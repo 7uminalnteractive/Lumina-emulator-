@@ -462,7 +462,12 @@ static bool CPU_Init(FileLoader *fileLoader, IdentifiedFileType type, std::strin
 		if (fileLoader->GetPath().Type() == PathType::CONTENT_URI) {
 			dir = AndroidContentURI(dir).FilePath();
 		}
-		size_t pos = dir.find("PSP/GAME/");
+		// GMP Gameport: PSP/GAME/ was consolidated into GMP/Jogo/Game/ (see PathUtil.cpp).
+		// Check the new layout first, falling back to the legacy one for old paths/backups.
+		size_t pos = dir.find("GMP/Jogo/Game/");
+		if (pos == std::string::npos) {
+			pos = dir.find("PSP/GAME/");
+		}
 		if (pos != std::string::npos) {
 			dir = ResolvePBPDirectory(Path(dir)).ToString();
 			pspFileSystem.SetStartingDirectory("ms0:/" + dir.substr(pos));

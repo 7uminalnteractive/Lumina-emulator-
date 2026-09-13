@@ -257,7 +257,8 @@ IdentifiedFileType Identify_File(FileLoader *fileLoader, std::string *errorStrin
 		// Let's check if we got pointed to a PBP within such a directory.
 		// If so we just move up and return the directory itself as the game.
 		// If loading from memstick...
-		if (fileLoader->GetPath().FilePathContainsNoCase("PSP/GAME/")) {
+		// GMP Gameport: PSP/GAME/ was consolidated into GMP/Jogo/Game/ (see PathUtil.cpp).
+		if (fileLoader->GetPath().FilePathContainsNoCase("GMP/Jogo/Game/") || fileLoader->GetPath().FilePathContainsNoCase("PSP/GAME/")) {
 			return IdentifiedFileType::PSP_PBP_DIRECTORY;
 		}
 		return IdentifiedFileType::PSP_PBP;

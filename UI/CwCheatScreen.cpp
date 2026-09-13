@@ -164,7 +164,8 @@ bool CwCheatScreen::TryLoadCheatInfo() {
 		return false;
 	}
 	gameID = info->GetParamSFO().GetValueString("DISC_ID");
-	if ((info->id.empty() || !info->disc_total)	&& gamePath_.FilePathContainsNoCase("PSP/GAME/")) {
+	// GMP Gameport: PSP/GAME/ was consolidated into GMP/Jogo/Game/ (see PathUtil.cpp).
+	if ((info->id.empty() || !info->disc_total) && (gamePath_.FilePathContainsNoCase("GMP/Jogo/Game/") || gamePath_.FilePathContainsNoCase("PSP/GAME/"))) {
 		gameID = g_paramSFO.GenerateFakeID(gamePath_);
 	}
 
@@ -232,7 +233,8 @@ void CwCheatScreen::CreateSettingsViews(UI::ViewGroup *leftColumn) {
 
 	std::string root = GetSysDirectory(DIRECTORY_MEMSTICK_ROOT).ToString();
 
-	std::string title = StringFromFormat(cw->T_cstr("Import from %s"), "PSP/Cheats/cheat.db");
+	// GMP Gameport: Cheats now lives under Sistema/Cheats (see PathUtil.cpp).
+	std::string title = StringFromFormat(cw->T_cstr("Import from %s"), "GMP/Sistema/Cheats/cheat.db");
 
 	leftColumn->Add(new Choice(title))->OnClick.Handle(this, &CwCheatScreen::OnImportCheat);
 	leftColumn->Add(new Choice(mm->T("Browse"), ImageID("I_FOLDER_OPEN")))->OnClick.Handle(this, &CwCheatScreen::OnImportBrowse);

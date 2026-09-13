@@ -18,7 +18,11 @@
 
 bool FolderSeemsToBeUsed(const Path &newMemstickFolder) {
 	// Inspect the potential new folder, quickly.
-	if (File::Exists(newMemstickFolder / "PSP/SAVEDATA") || File::Exists(newMemstickFolder / "SAVEDATA")) {
+	// GMP Gameport: recognize both the legacy PPSSPP layout (PSP/SAVEDATA) and
+	// the new consolidated layout (GMP/Jogo/Save), so switching back to a
+	// folder that's already a GMP Gameport memstick is still detected correctly.
+	if (File::Exists(newMemstickFolder / "PSP/SAVEDATA") || File::Exists(newMemstickFolder / "SAVEDATA") ||
+		File::Exists(newMemstickFolder / "GMP/Jogo/Save") || File::Exists(newMemstickFolder / "Jogo/Save")) {
 		// Does seem likely. We could add more criteria like checking for actual savegames or something.
 		return true;
 	} else {
@@ -145,11 +149,12 @@ std::string MoveProgressReporter::Format() {
 
 MoveResult *MoveDirectoryContentsSafe(Path moveSrc, Path moveDest, MoveProgressReporter &progressReporter) {
 	auto ms = GetI18NCategory(I18NCat::MEMSTICK);
-	if (moveSrc.GetFilename() != "PSP") {
-		moveSrc = moveSrc / "PSP";
+	// GMP Gameport: memstick root folder renamed from "PSP" to "GMP", see PathUtil.cpp.
+	if (moveSrc.GetFilename() != "GMP") {
+		moveSrc = moveSrc / "GMP";
 	}
-	if (moveDest.GetFilename() != "PSP") {
-		moveDest = moveDest / "PSP";
+	if (moveDest.GetFilename() != "GMP") {
+		moveDest = moveDest / "GMP";
 		File::CreateDir(moveDest);
 	}
 

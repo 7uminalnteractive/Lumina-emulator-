@@ -119,12 +119,12 @@ public class LibraryActivity extends AppCompatActivity {
 
     private File gamesFolder() {
         File externalRoot = Environment.getExternalStorageDirectory();
-        return new File(externalRoot, "PSP/GAME");
+        return new File(externalRoot, "GMP/Jogo/Game");
     }
 
     private void scanGamesFolder() {
         showLoading();
-        folderLabel.setText("Armazenamento/PSP/GAME");
+        folderLabel.setText("Armazenamento/GMP/Jogo/Game");
 
         new Thread(() -> {
             List<GameItem> games = new ArrayList<>();
@@ -169,7 +169,7 @@ public class LibraryActivity extends AppCompatActivity {
                 if (child.isDirectory()) {
                     // Lumina: some extraction tools produce a folder containing a PSP_GAME
                     // subfolder (the same layout as a real UMD disc image extracted to disk),
-                    // e.g. "PSP/GAME/<Game Name>/PSP_GAME/SYSDIR/EBOOT.BIN". PPSSPP's native
+                    // e.g. "GMP/Jogo/Game/<Game Name>/PSP_GAME/SYSDIR/EBOOT.BIN". PPSSPP's native
                     // core (Core/Loaders.cpp) already knows how to boot straight from such a
                     // folder, but this scan previously only matched loose .iso/.cso/etc. files,
                     // so these folders were silently skipped. Detect them here and treat the

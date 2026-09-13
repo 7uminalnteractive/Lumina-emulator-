@@ -276,7 +276,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Buscamos automaticamente seus jogos em Armazenamento/PSP/GAME. Toque abaixo e permita &quot;Acesso a todos os arquivos&quot; nas configurações do Android."
+            android:text="Buscamos automaticamente seus jogos em Armazenamento/GMP/Jogo/Game. Toque abaixo e permita &quot;Acesso a todos os arquivos&quot; nas configurações do Android."
             android:textColor="@color/lumina_muted"
             android:textSize="13sp"
             android:gravity="center"
@@ -307,7 +307,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Nenhum jogo encontrado em Armazenamento/PSP/GAME"
+            android:text="Nenhum jogo encontrado em Armazenamento/GMP/Jogo/Game"
             android:textColor="@color/lumina_text"
             android:textSize="18sp"
             android:gravity="center" />

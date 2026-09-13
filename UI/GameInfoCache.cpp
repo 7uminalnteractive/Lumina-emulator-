@@ -613,8 +613,9 @@ public:
 						info_->ParseParamSFO(info_->fileType);
 
 						// Assuming PSP_PBP_DIRECTORY without ID or with disc_total < 1 in GAME dir must be homebrew
+						// GMP Gameport: PSP/GAME/ was consolidated into GMP/Jogo/Game/ (see PathUtil.cpp).
 						if ((info_->id.empty() || !info_->disc_total)
-							&& gamePath_.FilePathContainsNoCase("PSP/GAME/")
+							&& (gamePath_.FilePathContainsNoCase("GMP/Jogo/Game/") || gamePath_.FilePathContainsNoCase("PSP/GAME/"))
 							&& info_->fileType == IdentifiedFileType::PSP_PBP_DIRECTORY) {
 							info_->id = g_paramSFO.GenerateFakeID(gamePath_);
 							info_->id_version = info_->id + "_1.00";

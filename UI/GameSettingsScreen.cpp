@@ -1277,8 +1277,9 @@ void GameSettingsScreen::CreateSystemSettings(UI::ViewGroup *systemSettings) {
 		std::string usbPath;
 		if (PathToVisualUsbPath(g_Config.memStickDirectory, usbPath)) {
 			if (usbPath.empty()) {
-				// Probably it's just the root. So let's add PSP to make it clear.
-				usbPath = "/PSP";
+				// Probably it's just the root. So let's add GMP to make it clear.
+				// (GMP Gameport: memstick root folder renamed from "PSP" to "GMP", see PathUtil.cpp.)
+				usbPath = "/GMP";
 			}
 		}
 	}

@@ -97,10 +97,13 @@ Path DirectoryFileHandle::GetLocalPath(const Path &basePath, std::string_view lo
 	if (localPath[0] == '/')
 		localPath = localPath.substr(1);
 
+	// GMP Gameport: memstick root folder renamed from "PSP" to "GMP", see PathUtil.cpp.
+	// The STRIP_PSP flag name is kept as-is (it's an internal flag name, not user-facing)
+	// to avoid a larger, riskier rename across all callers -- only the string it strips changed.
 	if (fileSystemFlags_ & FileSystemFlags::STRIP_PSP) {
-		if (localPath == "PSP") {
+		if (localPath == "GMP") {
 			localPath = "/";
-		} else if (startsWithNoCase(localPath, "PSP/")) {
+		} else if (startsWithNoCase(localPath, "GMP/")) {
 			localPath = localPath.substr(4);
 		}
 	}
@@ -115,10 +118,11 @@ Path DirectoryFileSystem::GetLocalPath(std::string_view internalPath) const {
 	if (internalPath[0] == '/')
 		internalPath = internalPath.substr(1);
 
+	// GMP Gameport: memstick root folder renamed from "PSP" to "GMP", see PathUtil.cpp.
 	if (flags & FileSystemFlags::STRIP_PSP) {
-		if (internalPath == "PSP") {
+		if (internalPath == "GMP") {
 			internalPath = "/";
-		} else if (startsWithNoCase(internalPath, "PSP/")) {
+		} else if (startsWithNoCase(internalPath, "GMP/")) {
 			internalPath = internalPath.substr(4);
 		}
 	}
@@ -250,8 +254,8 @@ bool DirectoryFileHandle::Open(const Path &basePath, std::string &fileName, File
 			flags |= File::OPEN_READ;
 
 		int fd = File::OpenFD(fullName, (File::OpenFlag)flags);
-		// Try to detect reads/writes to PSP/GAME to avoid them in replays.
-		if (fullName.FilePathContainsNoCase("PSP/GAME/")) {
+		// Try to detect reads/writes to GMP/Jogo/Game (formerly PSP/GAME) to avoid them in replays.
+		if (fullName.FilePathContainsNoCase("GMP/Jogo/Game/") || fullName.FilePathContainsNoCase("PSP/GAME/")) {
 			inGameDir_ = true;
 		}
 		hFile = fd;
@@ -344,8 +348,8 @@ bool DirectoryFileHandle::Open(const Path &basePath, std::string &fileName, File
 	}
 #endif
 
-	// Try to detect reads/writes to PSP/GAME to avoid them in replays.
-	if (fullName.FilePathContainsNoCase("PSP/GAME/")) {
+	// Try to detect reads/writes to GMP/Jogo/Game (formerly PSP/GAME) to avoid them in replays.
+	if (fullName.FilePathContainsNoCase("GMP/Jogo/Game/") || fullName.FilePathContainsNoCase("PSP/GAME/")) {
 		inGameDir_ = true;
 	}
 	if (access & (FILEACCESS_APPEND | FILEACCESS_CREATE | FILEACCESS_WRITE)) {
@@ -914,13 +918,19 @@ std::vector<PSPFileInfo> DirectoryFileSystem::GetDirListing(std::string_view pat
 				// Workaround for DJ Max Portable, see compat.ini.
 				continue;
 			} else if (file.isDirectory) {
-				if (endsWithNoCase(path, "SAVEDATA")) {
+				// GMP Gameport: SAVEDATA/GAME/TEXTURES/PPSSPP_STATE/PLUGINS/SYSTEM/Cheats
+				// used to be separate top-level folders (see PathUtil.cpp); they were
+				// consolidated into Jogo/Save, Jogo/Game, Textura, and Sistema/*. The
+				// checks below were updated to match the new names, but keep doing
+				// exactly the same job: hiding save data from other games, and hiding
+				// the folders a game would otherwise waste boot time scanning.
+				if (endsWithNoCase(path, "Save")) {
 					// Don't let it see savedata from other games, it can misinterpret stuff.
 					std::string gameID = g_paramSFO.GetDiscID();
 					if (entry.name.size() > 2 && !startsWithNoCase(entry.name, gameID)) {
 						continue;
 					}
-				} else if (file.name == "GAME" || file.name == "TEXTURES" || file.name == "PPSSPP_STATE" || file.name == "PLUGINS" || file.name == "SYSTEM" || equalsNoCase(file.name, "Cheats")) {
+				} else if (file.name == "Game" || file.name == "Textura" || equalsNoCase(file.name, "Sistema")) {
 					// The game scans these folders on startup which can take time. Skip them.
 					continue;
 				}
@@ -946,11 +956,12 @@ std::vector<PSPFileInfo> DirectoryFileSystem::GetDirListing(std::string_view pat
 		myVector.push_back(entry);
 	}
 
+	// GMP Gameport: memstick root folder renamed from "PSP" to "GMP", see PathUtil.cpp.
 	if (this->flags & FileSystemFlags::STRIP_PSP) {
 		if (path == "/") {
-			// Artificially add the /PSP directory to the root listing.
+			// Artificially add the /GMP directory to the root listing.
 			PSPFileInfo pspInfo{};
-			pspInfo.name = "PSP";
+			pspInfo.name = "GMP";
 			pspInfo.type = FILETYPE_DIRECTORY;
 			pspInfo.size = 4096;
 			pspInfo.access = 0x777;

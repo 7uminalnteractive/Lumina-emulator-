@@ -2444,21 +2444,23 @@ static u32 sceIoDopen(const char *path) {
 
 	// Blacklist some directories that games should not be able to find out about.
 	// Speeds up directory iteration on slow Android Scoped Storage implementations :(
-	// Might also want to filter out PSP/GAME if not a homebrew, maybe also irrelevant directories
-	// in PSP/SAVEDATA, though iffy to know which ones are irrelevant..
-	// Also if we're stripping PSP from the path due to setting a directory named PSP as the memstick root,
+	// Might also want to filter out GMP/Jogo/Game if not a homebrew, maybe also irrelevant directories
+	// in GMP/Jogo/Save, though iffy to know which ones are irrelevant..
+	// Also if we're stripping GMP from the path due to setting a directory named GMP as the memstick root,
 	// these will also show up at ms0: which is not ideal. Should find some other way to deal with that.
-	if (!strcmp(path, "ms0:/PSP") || !strcmp(path, "ms0:")) {
+	//
+	// GMP Gameport: the original PSP-standard top-level folders (CHEATS, PPSSPP_STATE,
+	// PLUGINS, SYSTEM, SCREENSHOT, TEXTURES, DUMP, SHADERS, DRIVERS) were consolidated
+	// into three top-level folders (see PathUtil.cpp): Jogo/, Textura/, and Sistema/
+	// (which now holds everything that isn't game data, save data, or custom textures).
+	// "Textura" is intentionally still blacklisted here, same as "TEXTURES" was before.
+	// "Jogo" is NOT blacklisted, because it holds the actual games (old "GAME") which
+	// must remain visible -- only the "GAME" entry directly at the memstick root was
+	// ever blacklisted below, and that check is unaffected by this rename.
+	if (!strcmp(path, "ms0:/GMP") || !strcmp(path, "ms0:")) {
 		static const char *const pspFolderBlacklist[] = {
-			"CHEATS",
-			"PPSSPP_STATE",
-			"PLUGINS",
-			"SYSTEM",
-			"SCREENSHOT",
-			"TEXTURES",
-			"DUMP",
-			"SHADERS",
-			"DRIVERS",
+			"Sistema",
+			"Textura",
 		};
 		std::vector<PSPFileInfo> filtered;
 		for (const auto &entry : dir->listing) {

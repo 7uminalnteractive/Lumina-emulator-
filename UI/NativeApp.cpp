@@ -580,17 +580,17 @@ void NativeInit(int argc, const char *argv[], const CommandLineOptions &cmdLineO
 	System_Notify(SystemNotification::CONFIG_LOADED);
 
 #if PPSSPP_PLATFORM(ANDROID)
-	// Lumina: skip the "Welcome to PPSSPP! Choose where to keep PSP data" screen by
-	// defaulting straight to Armazenamento/PSP (the same folder layout the game
+	// GMP Gameport: skip the "Welcome to PPSSPP! Choose where to keep PSP data" screen by
+	// defaulting straight to Armazenamento/GMP (the same folder layout the game
 	// library scan already expects), instead of asking the user to pick a folder on
 	// first run. If memStickDirectory is already set (returning user, or someone who
 	// explicitly changed it later), this does nothing.
 	if (g_Config.memStickDirectory.empty() && !g_externalDir.empty()) {
-		Path defaultMemStick = Path(g_externalDir) / "PSP";
+		Path defaultMemStick = Path(g_externalDir) / "GMP";
 		if (SwitchMemstickFolderTo(defaultMemStick)) {
-			INFO_LOG(Log::System, "Lumina: defaulted memstick directory to '%s'", defaultMemStick.c_str());
+			INFO_LOG(Log::System, "GMP Gameport: defaulted memstick directory to '%s'", defaultMemStick.c_str());
 		} else {
-			WARN_LOG(Log::System, "Lumina: failed to default memstick directory to '%s', will show setup screen", defaultMemStick.c_str());
+			WARN_LOG(Log::System, "GMP Gameport: failed to default memstick directory to '%s', will show setup screen", defaultMemStick.c_str());
 		}
 	}
 #endif

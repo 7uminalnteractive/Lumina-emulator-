@@ -363,7 +363,12 @@ bool Load_PSP_ELF_PBP(FileLoader *fileLoader, std::string_view discId, std::stri
 		path = AndroidContentURI(full_path.GetDirectory()).FilePath();
 	}
 
-	size_t pos = path.find("PSP/GAME/");
+	// GMP Gameport: PSP/GAME/ was consolidated into GMP/Jogo/Game/ (see PathUtil.cpp).
+	// Check the new layout first, falling back to the legacy one for old paths/backups.
+	size_t pos = path.find("GMP/Jogo/Game/");
+	if (pos == std::string::npos) {
+		pos = path.find("PSP/GAME/");
+	}
 	std::string ms_path;
 	if (pos != std::string::npos) {
 		ms_path = "ms0:/" + path.substr(pos) + "/";
