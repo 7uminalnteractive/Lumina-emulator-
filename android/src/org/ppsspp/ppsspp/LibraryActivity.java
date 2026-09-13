@@ -130,6 +130,7 @@ public class LibraryActivity extends AppCompatActivity {
             List<GameItem> games = new ArrayList<>();
             try {
                 File root = gamesFolder();
+                ensureGmpFoldersExist(root);
                 if (root.exists() && root.isDirectory()) {
                     collectGames(root, games, 0);
                 }
@@ -149,6 +150,34 @@ public class LibraryActivity extends AppCompatActivity {
                 }
             });
         }).start();
+    }
+
+    /**
+     * GMP Gameport: garante que a estrutura de pastas exista assim que o usuário
+     * concede acesso ao armazenamento, em vez de só esperar passivamente que ela
+     * já exista. Sem isso, quem instala o app pela primeira vez nunca via a pasta
+     * "GMP/Jogo/Game" criada em nenhum lugar -- não havia onde colocar os jogos.
+     *
+     * Cria tanto Jogo/Game (que é o que esta tela escaneia) quanto as pastas
+     * irmãs Jogo/Save, Textura e Sistema, para a estrutura já nascer completa
+     * na primeira execução, do mesmo jeito que o core nativo (PathUtil.cpp)
+     * criaria ao rodar um jogo -- só que aqui garantimos que isso já aconteça
+     * antes disso, no primeiro acesso à Biblioteca.
+     */
+    private void ensureGmpFoldersExist(File gameFolder) {
+        if (!gameFolder.exists() && !gameFolder.mkdirs()) {
+            android.util.Log.w("LibraryActivity", "Não foi possível criar: " + gameFolder);
+        }
+
+        File externalRoot = Environment.getExternalStorageDirectory();
+        File gmpRoot = new File(externalRoot, "GMP");
+        String[] siblingFolders = {"Jogo/Save", "Textura", "Sistema"};
+        for (String sibling : siblingFolders) {
+            File dir = new File(gmpRoot, sibling);
+            if (!dir.exists() && !dir.mkdirs()) {
+                android.util.Log.w("LibraryActivity", "Não foi possível criar: " + dir);
+            }
+        }
     }
 
     private void collectGames(File folder, List<GameItem> out, int depth) {
