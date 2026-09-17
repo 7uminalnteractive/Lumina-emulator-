@@ -27,6 +27,8 @@ jobs:
 
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools"
 
       - name: Instalar NDK e CMake (mesma versão do build.gradle.kts)
         run: |
