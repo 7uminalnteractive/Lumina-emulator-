@@ -1660,6 +1660,29 @@ bool NativeIsRestarting() {
 	return restarting;
 }
 
+// GMP Gameport: see the declaration in Common/System/NativeApp.h for why this
+// needs to run synchronously here rather than going through the normal
+// UIMessage queue (which is only drained once per rendered frame, and there
+// may be no more frames coming once the app is being backgrounded).
+//
+// IMPORTANT: this touches EmuScreen/the PSP kernel state, which is normally
+// only ever touched from the app's main/render thread. It must only be
+// called from that same thread -- see
+// Java_org_ppsspp_ppsspp_NativeApp_saveStateForBackground() in
+// android/jni/app-android.cpp, which is the actual JNI entry point and takes
+// care of getting this dispatched onto the right thread (via
+// System_RunOnMainThread) and blocking, with a timeout, until it's done
+// before returning to Java.
+void GMP_SaveEmulatorStateForBackground() {
+	if (!g_screenManager) {
+		return;
+	}
+	EmuScreen *emuScreen = dynamic_cast<EmuScreen *>(g_screenManager->topScreen());
+	if (emuScreen) {
+		emuScreen->AutoSaveOnBackground();
+	}
+}
+
 void NativeShutdown() {
 	INFO_LOG(Log::System, "NativeShutdown begin");
 	ClearAchievementsHostOverride();

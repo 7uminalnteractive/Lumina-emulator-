@@ -32,13 +32,15 @@ public class AuthClient {
         this.accountStore = accountStore;
     }
 
-    public void signIn(String email, String password, AuthCallback callback) {
+    public void signIn(String displayName, String email, String password, AuthCallback callback) {
         // Simula uma pequena latência de rede para o loading não "piscar"
         // instantaneamente -- fica mais fácil perceber se o spinner está
         // funcionando, e já deixa o fluxo parecido com uma chamada real.
         mainHandler.postDelayed(() -> {
-            String displayName = guessDisplayNameFromEmail(email);
-            LocalAccount account = accountStore.addOrUpdateAccount(email, displayName);
+            String name = (displayName != null && !displayName.trim().isEmpty())
+                    ? displayName.trim()
+                    : guessDisplayNameFromEmail(email);
+            LocalAccount account = accountStore.addOrUpdateAccount(email, name);
             callback.onSuccess(account);
         }, 450);
     }

@@ -18,6 +18,7 @@ public class LoginActivity extends Activity {
     /** Quando true, veio do botão "+" do seletor de perfil (não pular auto-login). */
     public static final String EXTRA_ADDING_ACCOUNT = "adding_account";
 
+    private EditText nameField;
     private EditText emailField;
     private EditText passwordField;
     private CheckBox stayLoggedInCheckbox;
@@ -46,6 +47,7 @@ public class LoginActivity extends Activity {
             return;
         }
 
+        nameField = findViewById(R.id.name_field);
         emailField = findViewById(R.id.email_field);
         passwordField = findViewById(R.id.password_field);
         stayLoggedInCheckbox = findViewById(R.id.stay_logged_in_checkbox);
@@ -60,11 +62,16 @@ public class LoginActivity extends Activity {
     }
 
     private void attemptLogin() {
+        String name = nameField.getText().toString().trim();
         String email = emailField.getText().toString().trim();
         String password = passwordField.getText().toString();
 
         errorText.setVisibility(View.GONE);
 
+        if (TextUtils.isEmpty(name)) {
+            showError("Digite seu nome.");
+            return;
+        }
         if (TextUtils.isEmpty(email) || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             showError("Digite um e-mail válido.");
             return;
@@ -76,7 +83,7 @@ public class LoginActivity extends Activity {
 
         setLoading(true);
 
-        authClient.signIn(email, password, new AuthClient.AuthCallback() {
+        authClient.signIn(name, email, password, new AuthClient.AuthCallback() {
             @Override
             public void onSuccess(LocalAccount account) {
                 setLoading(false);

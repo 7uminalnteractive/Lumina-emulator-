@@ -65,6 +65,16 @@ public:
 		imCmd_ = command;
 	}
 
+	// GMP Gameport: triggers the dedicated background autosave (its own
+	// reserved slot, separate from the user's normal 5 save state slots).
+	// Called from the app's main/render thread via
+	// GMP_SaveEmulatorStateForBackground() in UI/NativeApp.cpp, which is
+	// itself dispatched there (blocking, with a timeout) from
+	// NativeApp.saveStateForBackground() -- see PpssppActivity.onPause() and
+	// item 6/7 of the GMP Gameport prompt. Safe to call even if no game is
+	// booted (no-op in that case).
+	void AutoSaveOnBackground();
+
 protected:
 	void darken();
 	void focusChanged(ScreenFocusChange focusChange) override;
@@ -94,6 +104,12 @@ private:
 
 
 	void AutoLoadSaveState();
+
+	// GMP Gameport: restores the dedicated background autosave slot on boot,
+	// when present, taking priority over the normal AutoLoadSaveState config
+	// -- see bootComplete() and item 6/7 of the GMP Gameport prompt.
+	void AutoLoadBackgroundSaveIfPresent();
+
 	bool checkPowerDown();
 
 	void ProcessQueuedVKeys();

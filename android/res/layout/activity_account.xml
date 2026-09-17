@@ -21,16 +21,18 @@
             android:layout_marginBottom="16dp">
 
             <TextView
+                android:id="@+id/account_avatar"
                 android:layout_width="84dp"
                 android:layout_height="84dp"
                 android:background="@drawable/gmp_avatar_bg"
                 android:gravity="center"
-                android:text="G"
+                android:text="?"
                 android:textColor="@color/lumina_on_accent"
                 android:textStyle="bold"
                 android:textSize="30sp" />
 
             <View
+                android:id="@+id/profile_status_dot"
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:layout_gravity="bottom|end"

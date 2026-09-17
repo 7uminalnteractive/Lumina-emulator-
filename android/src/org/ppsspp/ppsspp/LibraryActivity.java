@@ -39,6 +39,9 @@ public class LibraryActivity extends AppCompatActivity {
     private TextView heroTitle;
     private TextView heroSubtitle;
     private View heroPlayButton;
+    private TextView profileAvatar;
+    private View profileStatusDot;
+    private AccountStore accountStore;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -53,6 +56,9 @@ public class LibraryActivity extends AppCompatActivity {
         heroTitle = findViewById(R.id.hero_title);
         heroSubtitle = findViewById(R.id.hero_subtitle);
         heroPlayButton = findViewById(R.id.hero_play_button);
+        profileAvatar = findViewById(R.id.profile_avatar);
+        profileStatusDot = findViewById(R.id.profile_status_dot);
+        accountStore = new AccountStore(this);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
 
@@ -90,6 +96,7 @@ public class LibraryActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        ProfileBadgeHelper.bind(profileAvatar, profileStatusDot, accountStore.getActiveAccount());
         if (hasStorageAccess()) {
             scanGamesFolder();
         } else {

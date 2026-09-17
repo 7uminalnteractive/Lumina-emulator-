@@ -52,6 +52,13 @@ public class NativeApp {
 	public static native void pause();
 	public static native void resume();
 
+	// GMP Gameport: must be called *before* pause() and before the render
+	// surface/thread is paused or joined -- saving a state needs the graphics
+	// context to still be alive (it captures a screenshot for the save's
+	// thumbnail). See PpssppActivity.onPause() for the call site and
+	// item 6/7 of the GMP Gameport prompt for why this exists.
+	public static native void saveStateForBackground();
+
 	public static native void shutdown();
 
 	public static native boolean keyDown(int deviceId, int key, boolean isRepeat);

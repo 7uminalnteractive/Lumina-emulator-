@@ -421,10 +421,19 @@ static int DefaultInternalResolution() {
 	if (System_GetPropertyInt(SYSPROP_DEVICE_TYPE) == DEVICE_TYPE_VR) {
 		return 4;
 	}
+	// GMP Gameport: a configuração gráfica padrão do app é Vulkan + PSPx8
+	// (equivalente a 4K), então em vez do 1x/2x automático por tamanho de
+	// tela do PPSSPP upstream, partimos direto para 8x em Android. Isso é
+	// resolução interna do PSP (múltiplo de 480x272), não a resolução física
+	// da tela do celular -- os dois não devem ser confundidos.
+#if PPSSPP_PLATFORM(ANDROID)
+	return 8;
+#else
 	int longestDisplaySide = std::max(System_GetPropertyInt(SYSPROP_DISPLAY_XRES), System_GetPropertyInt(SYSPROP_DISPLAY_YRES));
 	int scale = longestDisplaySide >= 1000 ? 2 : 1;
 	INFO_LOG(Log::G3D, "Longest display side: %d pixels. Choosing scale %d", longestDisplaySide, scale);
 	return scale;
+#endif
 #endif
 }
 
@@ -493,17 +502,20 @@ static int DefaultGPUBackend() {
 		}
 	}
 
-	// Default to Vulkan only on Oreo 8.1 (level 27) devices or newer, and only
-	// on ARM64 and x86-64. Drivers before, and on other archs, are generally too
-	// unreliable to default to (with some exceptions, of course).
+	// GMP Gameport: Vulkan é o backend gráfico padrão do app (ver item 5 do
+	// pedido de redesign), então preferimos Vulkan em qualquer Android
+	// moderno o suficiente para suportá-lo, em vez de restringir isso só a
+	// aparelhos 64-bit recentes como o PPSSPP upstream fazia. A blacklist
+	// acima (dispositivos com driver Vulkan conhecidamente ruim) continua
+	// valendo -- é o fallback seguro para não travar em hardware problemático.
 #if PPSSPP_ARCH(64BIT)
-	if (System_GetPropertyInt(SYSPROP_SYSTEMVERSION) >= 27) {
+	if (System_GetPropertyInt(SYSPROP_SYSTEMVERSION) >= 24) {
 		return (int)GPUBackend::VULKAN;
 	}
 #else
-	// There are some newer devices that benefit from Vulkan as default, but are 32-bit. Example: Redmi 9A.
-	// Let's only allow the very newest generation though.
-	if (System_GetPropertyInt(SYSPROP_SYSTEMVERSION) >= 30) {
+	// Em 32-bit mantemos um piso um pouco mais alto: drivers Vulkan em
+	// aparelhos 32-bit antigos tendem a ser mais instáveis.
+	if (System_GetPropertyInt(SYSPROP_SYSTEMVERSION) >= 27) {
 		return (int)GPUBackend::VULKAN;
 	}
 #endif

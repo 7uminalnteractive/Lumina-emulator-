@@ -15,10 +15,25 @@ public class LocalAccount {
     public String displayName;
     public String email;
 
+    /**
+     * Status online real da conta (não apenas um ponto verde fixo na UI).
+     *
+     * Persistido junto com o resto da conta em AccountStore. Por padrão toda
+     * conta nova nasce online = true. Quando o backend/Supabase de presença
+     * real existir, este campo passa a ser atualizado por ele; até lá, ele
+     * apenas reflete o valor salvo localmente.
+     */
+    public boolean online;
+
     public LocalAccount(String id, String displayName, String email) {
+        this(id, displayName, email, true);
+    }
+
+    public LocalAccount(String id, String displayName, String email, boolean online) {
         this.id = id;
         this.displayName = displayName;
         this.email = email;
+        this.online = online;
     }
 
     /** Inicial usada no avatar circular quando não há foto (ex: "L" para "Luan"). */

@@ -1126,6 +1126,12 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		super.onPause();
 		lifeCycle.onPause();
 
+		// GMP Gameport: must run before joinRenderLoopThread()/mGLSurfaceView.onPause()
+		// below -- saving a state needs the render thread and its graphics context
+		// still alive (it captures a screenshot for the save's thumbnail). See
+		// NativeApp.saveStateForBackground() and item 6/7 of the GMP Gameport prompt.
+		NativeApp.saveStateForBackground();
+
 		InputManager inputManager = (InputManager)getSystemService(Context.INPUT_SERVICE);
 		inputManager.unregisterInputDeviceListener(inputDeviceListener);
 

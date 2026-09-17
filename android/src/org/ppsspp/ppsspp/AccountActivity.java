@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -25,6 +26,10 @@ public class AccountActivity extends AppCompatActivity {
 
         TextView nameView = findViewById(R.id.account_name);
         nameView.setText(active != null ? active.displayName : "Bem-vindo(a)");
+
+        TextView avatarView = findViewById(R.id.account_avatar);
+        View statusDotView = findViewById(R.id.profile_status_dot);
+        ProfileBadgeHelper.bind(avatarView, statusDotView, active);
 
         findViewById(R.id.btn_change_library_folder).setOnClickListener(v -> {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

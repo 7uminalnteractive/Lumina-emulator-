@@ -50,7 +50,8 @@ public class AccountStore {
                 result.add(new LocalAccount(
                         obj.getString("id"),
                         obj.optString("displayName", ""),
-                        obj.optString("email", "")
+                        obj.optString("email", ""),
+                        obj.optBoolean("online", true)
                 ));
             }
         } catch (JSONException e) {
@@ -95,6 +96,25 @@ public class AccountStore {
         prefs.edit().putString(KEY_ACTIVE_ID, id).apply();
     }
 
+    /**
+     * Atualiza e persiste o status online de uma conta específica.
+     *
+     * Hoje isso só marca a preferência local (não há presença real via
+     * backend ainda), mas a estrutura já fica pronta: quando o Supabase
+     * enviar presença de verdade, basta chamar este mesmo método a partir
+     * da resposta do servidor em vez de um valor fixo.
+     */
+    public void setAccountOnline(String id, boolean online) {
+        List<LocalAccount> accounts = getAccounts();
+        for (LocalAccount acc : accounts) {
+            if (acc.id.equals(id)) {
+                acc.online = online;
+                saveAccounts(accounts);
+                return;
+            }
+        }
+    }
+
     /** "Sair" só desmarca o perfil ativo -- a conta continua salva no seletor. */
     public void clearActiveAccount() {
         prefs.edit().remove(KEY_ACTIVE_ID).apply();
@@ -122,6 +142,7 @@ public class AccountStore {
                 obj.put("id", acc.id);
                 obj.put("displayName", acc.displayName);
                 obj.put("email", acc.email);
+                obj.put("online", acc.online);
                 array.put(obj);
             }
         } catch (JSONException e) {

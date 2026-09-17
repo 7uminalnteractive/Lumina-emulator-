@@ -14,8 +14,12 @@
 #include <sstream>
 #include <queue>
 #include <mutex>
+#include <condition_variable>
+#include <chrono>
 #include <thread>
 #include <atomic>
+#include <memory>
+#include <functional>
 
 #ifndef _MSC_VER
 
@@ -949,6 +953,52 @@ extern "C" void Java_org_ppsspp_ppsspp_NativeApp_pause(JNIEnv *, jclass) {
 	INFO_LOG(Log::System, "NativeApp.pause() - begin");
 	AndroidAudio_Pause(g_audioState);
 	INFO_LOG(Log::System, "NativeApp.pause() - end");
+}
+
+// GMP Gameport: must be called *before* pause() and before the render
+// surface/thread is paused or joined (see PpssppActivity.onPause() -- this
+// needs to run while the render loop and its GL/Vulkan context are still
+// alive, since saving a state renders/reads back the current frame). See
+// item 6/7 of the GMP Gameport prompt and the comment on
+// GMP_SaveEmulatorStateForBackground() in Common/System/NativeApp.h.
+//
+// This is called from the Android UI thread (Activity.onPause() runs there),
+// but EmuScreen/the PSP kernel state must only ever be touched from the app's
+// own main/render thread. System_RunOnMainThread() is the existing,
+// thread-safe way to hand work off to that thread -- but it's normally
+// fire-and-forget, only drained once per rendered frame. Here we additionally
+// block (with a short timeout) until it's actually run, since the whole
+// point is to finish the save before Android can kill the process. If the
+// main thread doesn't pick it up in time (e.g. it's already stopped for some
+// other reason), we give up rather than risk hanging onPause() forever --
+// per the GMP Gameport prompt itself: "não é necessário prometer que o
+// processo nunca será encerrado pelo sistema".
+extern "C" void Java_org_ppsspp_ppsspp_NativeApp_saveStateForBackground(JNIEnv *, jclass) {
+	INFO_LOG(Log::System, "NativeApp.saveStateForBackground() - begin");
+
+	auto done = std::make_shared<std::atomic<bool>>(false);
+	auto mutex = std::make_shared<std::mutex>();
+	auto cv = std::make_shared<std::condition_variable>();
+
+	System_RunOnMainThread([done, mutex, cv]() {
+		GMP_SaveEmulatorStateForBackground();
+		{
+			std::lock_guard<std::mutex> lock(*mutex);
+			done->store(true);
+		}
+		cv->notify_all();
+	});
+
+	std::unique_lock<std::mutex> lock(*mutex);
+	bool completed = cv->wait_for(lock, std::chrono::milliseconds(500), [&done]() {
+		return done->load();
+	});
+
+	if (completed) {
+		INFO_LOG(Log::System, "NativeApp.saveStateForBackground() - completed");
+	} else {
+		WARN_LOG(Log::System, "NativeApp.saveStateForBackground() - timed out waiting for main thread, giving up");
+	}
 }
 
 extern "C" void Java_org_ppsspp_ppsspp_NativeApp_shutdown(JNIEnv *, jclass) {

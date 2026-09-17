@@ -161,6 +161,27 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="Nome"
+                android:textColor="@color/lumina_text"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/name_field"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:hint="Como podemos te chamar?"
+                android:inputType="textPersonName|textCapWords"
+                android:textColor="@color/lumina_text"
+                android:textColorHint="@color/lumina_muted"
+                android:background="@drawable/gmp_input_bg"
+                android:textSize="15sp"
+                android:layout_marginBottom="20dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="E-mail"
                 android:textColor="@color/lumina_text"
                 android:textSize="13sp"

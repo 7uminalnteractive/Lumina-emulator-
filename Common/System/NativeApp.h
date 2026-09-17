@@ -95,6 +95,17 @@ void NativeMix(short *audio, int num_samples, int sampleRateHz, void *userdata);
 void NativeShutdownGraphics(GraphicsContext *graphicsContext);
 void NativeShutdown();
 
+// GMP Gameport: called synchronously from NativeApp.pause() (JNI), *before*
+// the render surface itself is paused/torn down (see PpssppActivity.onPause()
+// in Java). If the current screen is an EmuScreen with a game booted, this
+// saves a dedicated autosave slot to disk right away -- not just queued for
+// "next frame" like a normal save state action, since there may not be a
+// next frame before Android kills the process. Safe to call at any other
+// time too (main menu, settings, etc); it's a no-op unless a game is running.
+// Implemented in UI/NativeApp.cpp, which already has access to the running
+// EmuScreen via g_screenManager.
+void GMP_SaveEmulatorStateForBackground();
+
 void PostLoadConfig();
 
 // Returns false on failure. Shouldn't really happen, though.

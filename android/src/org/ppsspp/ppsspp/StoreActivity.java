@@ -19,10 +19,18 @@ import androidx.recyclerview.widget.RecyclerView;
  */
 public class StoreActivity extends AppCompatActivity {
 
+    private AccountStore accountStore;
+    private android.widget.TextView profileAvatar;
+    private View profileStatusDot;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_store);
+
+        accountStore = new AccountStore(this);
+        profileAvatar = findViewById(R.id.profile_avatar);
+        profileStatusDot = findViewById(R.id.profile_status_dot);
 
         RecyclerView storeGrid = findViewById(R.id.store_grid);
         storeGrid.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
@@ -48,5 +56,11 @@ public class StoreActivity extends AppCompatActivity {
         View profileButton = findViewById(R.id.profile_avatar);
         profileButton.setOnClickListener(v ->
                 startActivity(new Intent(this, AccountActivity.class)));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ProfileBadgeHelper.bind(profileAvatar, profileStatusDot, accountStore.getActiveAccount());
     }
 }

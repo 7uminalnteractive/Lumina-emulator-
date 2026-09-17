@@ -358,6 +358,18 @@ void EmuScreen::ProcessGameBoot(const Path &filename) {
 }
 
 // Only call this on successful boot.
+// GMP Gameport: reserved slot for the background autosave/autoload pair
+// (AutoSaveOnBackground/AutoLoadBackgroundSaveIfPresent below, and the
+// priority check in bootComplete() just below). Deliberately outside the
+// 0-4 range that PrevSlot()/NextSlot() cycle through (they wrap with
+// "% g_Config.iSaveStateSlotCount", which is 5 by default), and outside the
+// range the normal Save State UI lets the user pick, so this can never
+// collide with or overwrite one of the user's own save slots.
+// SaveState::GenerateSaveSlotPath() just folds the slot number into the save
+// file's name (see Core/SaveState.cpp), so a negative slot number here is
+// safe -- it produces its own uniquely-named file, nothing more.
+static const int GMP_BACKGROUND_AUTOSAVE_SLOT = -100;
+
 void EmuScreen::bootComplete() {
 	__DisplayListenFlip([](void *userdata) {
 		EmuScreen *scr = (EmuScreen *)userdata;
@@ -392,8 +404,19 @@ void EmuScreen::bootComplete() {
 
 	NOTICE_LOG(Log::Boot, "Booted %s...", PSP_CoreParameter().fileToStart.c_str());
 	if (!Achievements::HardcoreModeActive() && !bootIsReset_) {
-		// Don't auto-load savestates in hardcore mode.
-		AutoLoadSaveState();
+		// GMP Gameport: if the process was killed while backgrounded (see
+		// item 6/7 of the GMP Gameport prompt), there's a background autosave
+		// waiting -- that's strictly more recent than anything in the user's
+		// normal 5 slots, so restore it instead of (not in addition to) the
+		// normal AutoLoadSaveState() config. A manual reset (bootIsReset_)
+		// intentionally skips both, same as upstream already did for AutoLoadSaveState().
+		std::string gamePrefix = SaveState::GetGamePrefix(g_paramSFO);
+		if (SaveState::HasSaveInSlot(gamePrefix, GMP_BACKGROUND_AUTOSAVE_SLOT)) {
+			AutoLoadBackgroundSaveIfPresent();
+		} else {
+			// Don't auto-load savestates in hardcore mode.
+			AutoLoadSaveState();
+		}
 	}
 
 #ifndef MOBILE_DEVICE
@@ -2075,6 +2098,68 @@ void EmuScreen::AutoLoadSaveState() {
 		});
 		g_Config.iCurrentStateSlot = autoSlot;
 	}
+}
+
+// GMP Gameport: reserved slot for the background autosave/autoload pair below.
+// Deliberately outside the 0-4 range that PrevSlot()/NextSlot() cycle through
+// (they wrap with "% g_Config.iSaveStateSlotCount", which is 5 by default),
+// and outside the range the normal Save State UI lets the user pick, so this
+// can never collide with or overwrite one of the user's own save slots.
+// SaveState::GenerateSaveSlotPath() just folds the slot number into the save
+// file's name (see Core/SaveState.cpp), so a negative slot number here is
+// safe -- it produces its own uniquely-named file, nothing more.
+
+void EmuScreen::AutoSaveOnBackground() {
+	// Only makes sense once a game has actually finished booting -- if we get
+	// backgrounded while still on the boot screen, there's nothing loaded yet
+	// to save, and g_paramSFO/gamePrefix wouldn't be ready anyway.
+	if (bootPending_ || !PSP_IsInited()) {
+		return;
+	}
+	// Respect hardcore mode the same way the normal save state UI does --
+	// we don't want an autosave slot working as a backdoor around it.
+	if (Achievements::HardcoreModeActive()) {
+		return;
+	}
+
+	std::string gamePrefix = SaveState::GetGamePrefix(g_paramSFO);
+	// SaveState::SaveSlot() only enqueues the save -- by design (see the
+	// "Don't actually run it until next frame" comment in SaveState.cpp) it's
+	// normally processed on the next call to SaveState::Process(), which only
+	// happens as part of the running game loop. But we're being called *because*
+	// the app is about to leave the foreground, so that loop may not get
+	// another iteration before Android decides to kill the process. So unlike
+	// a normal in-game save, we force SaveState::Process() synchronously right
+	// here, to make sure the write actually happens now rather than being left
+	// queued for a "next frame" that might never come.
+	SaveState::SaveSlot(gamePrefix, GMP_BACKGROUND_AUTOSAVE_SLOT, [](SaveState::Status status, std::string_view message, std::string_view metadata) {
+		if (status == SaveState::Status::FAILURE) {
+			WARN_LOG(Log::SaveState, "GMP Gameport: background autosave failed: %.*s", (int)message.size(), message.data());
+		}
+	});
+	SaveState::Process();
+}
+
+void EmuScreen::AutoLoadBackgroundSaveIfPresent() {
+	std::string gamePrefix = SaveState::GetGamePrefix(g_paramSFO);
+	if (!SaveState::HasSaveInSlot(gamePrefix, GMP_BACKGROUND_AUTOSAVE_SLOT)) {
+		return;
+	}
+
+	// LoadSlot is async (runs and calls back on another thread, per its own
+	// contract in Core/SaveState.h), so the slot must only be deleted once
+	// the callback fires -- deleting it right after issuing the load would
+	// race against SaveState actually reading the file. Consuming it (whether
+	// the load succeeded or failed) keeps a stale background save from ever
+	// being loaded again on a later, unrelated boot of the same game (item
+	// 7.5 of the GMP Gameport prompt -- "avoid loading an old autosave when
+	// the user quit normally").
+	SaveState::LoadSlot(gamePrefix, GMP_BACKGROUND_AUTOSAVE_SLOT, [gamePrefix](SaveState::Status status, std::string_view message, std::string_view metadata) {
+		if (status == SaveState::Status::FAILURE) {
+			WARN_LOG(Log::SaveState, "GMP Gameport: restoring background autosave failed: %.*s", (int)message.size(), message.data());
+		}
+		SaveState::DeleteSlot(gamePrefix, GMP_BACKGROUND_AUTOSAVE_SLOT);
+	});
 }
 
 void EmuScreen::resized() {
