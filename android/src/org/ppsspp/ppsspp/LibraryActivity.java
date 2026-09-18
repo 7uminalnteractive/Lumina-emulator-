@@ -13,7 +13,7 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.io.File;
@@ -60,7 +60,12 @@ public class LibraryActivity extends AppCompatActivity {
         profileStatusDot = findViewById(R.id.profile_status_dot);
         accountStore = new AccountStore(this);
 
-        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        // GMP Gameport: grade vertical multi-coluna (como nas referências),
+        // no lugar da única fileira horizontal que existia antes. O número
+        // de colunas é calculado a partir da largura da tela para caber bem
+        // tanto em celulares quanto em tablets, em vez de um valor fixo.
+        int columnCount = calculateGridColumnCount();
+        recyclerView.setLayoutManager(new GridLayoutManager(this, columnCount));
 
         Button grantAccessButton = findViewById(R.id.btn_pick_folder);
         grantAccessButton.setOnClickListener(v -> requestStorageAccess());
@@ -294,6 +299,26 @@ public class LibraryActivity extends AppCompatActivity {
         int dot = fileName.lastIndexOf('.');
         if (dot < 0 || dot == fileName.length() - 1) return "";
         return fileName.substring(dot + 1).toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * GMP Gameport: escolhe quantas colunas o grid de jogos deve ter, a
+     * partir da largura real de tela disponível (descontando a sidebar de
+     * 84dp e o padding horizontal da RecyclerView), em vez de um número
+     * fixo -- assim a Biblioteca fica parecida em celulares e tablets,
+     * sempre com cards de largura confortável (~150dp) em vez de esticados
+     * ou espremidos.
+     */
+    private int calculateGridColumnCount() {
+        float density = getResources().getDisplayMetrics().density;
+        int screenWidthPx = getResources().getDisplayMetrics().widthPixels;
+        float sidebarDp = 84f;
+        float horizontalPaddingDp = 24f; // 12dp de cada lado, via paddingHorizontal do RecyclerView
+        float targetCardWidthDp = 150f;
+
+        float availableWidthDp = (screenWidthPx / density) - sidebarDp - horizontalPaddingDp;
+        int columns = Math.round(availableWidthDp / targetCardWidthDp);
+        return Math.max(2, columns);
     }
 
     private void showLoading() {

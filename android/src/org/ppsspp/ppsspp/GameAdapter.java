@@ -58,7 +58,7 @@ public class GameAdapter extends RecyclerView.Adapter<GameAdapter.GameViewHolder
                     .apply(RequestOptions.bitmapTransform(
                             new com.bumptech.glide.load.MultiTransformation<>(
                                     new CenterCrop(),
-                                    new RoundedCorners((int) dp(holder.itemView, 18))
+                                    new RoundedCorners((int) dp(holder.itemView, 14))
                             )
                     ))
                     .into(holder.coverImage);
@@ -72,7 +72,7 @@ public class GameAdapter extends RecyclerView.Adapter<GameAdapter.GameViewHolder
                     GradientDrawable.Orientation.TL_BR,
                     new int[]{colors[0], colors[1]}
             );
-            gradient.setCornerRadius(dp(holder.itemView, 18));
+            gradient.setCornerRadius(dp(holder.itemView, 14));
             holder.cover.setBackground(gradient);
             holder.initials.setText(initialsOf(game.getTitle()));
         }

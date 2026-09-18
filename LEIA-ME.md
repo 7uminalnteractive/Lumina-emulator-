@@ -1,86 +1,90 @@
-# GMP Gameport — Fase 2 (funcional): itens 3, 4, 5, 6 e 7
+# GMP Gameport — Fase 3 (redesign visual) completa
 
-Este zip contém **apenas os arquivos alterados ou novos**, na mesma estrutura
-de pastas do seu repositório. Extraia por cima da pasta raiz do projeto
-(substituindo os arquivos existentes) e faça o commit normalmente.
+Este zip contém **todos os arquivos alterados** da Fase 3, partes 1 e 2
+juntas. Extraia por cima da raiz do repositório e commite.
 
-Nenhum arquivo fora desta lista foi tocado.
+Cobre os itens 2.1 (Sidebar), 2.2 (Biblioteca), 2.3 (Login), 2.4 (Save
+State) e 2.5 (Configurações do PSP) do prompt original.
 
-## O que mudou em cada item do prompt
+---
 
-### Item 3 — Nome do usuário vindo da conta
-- `android/res/layout/activity_login.xml` — novo campo "Nome" no cadastro
-  (antes só existia e-mail/senha; o nome era adivinhado do e-mail).
-- `android/src/.../LoginActivity.java`, `AuthClient.java` — leem e usam esse
-  nome real ao criar a conta.
-- `android/src/.../LibraryActivity.java`, `StoreActivity.java`,
-  `AccountActivity.java` — agora leem `AccountStore.getActiveAccount()` e
-  mostram a inicial certa no avatar (antes era "G" fixo nas três).
-- `android/res/layout/activity_library.xml`, `activity_store.xml`,
-  `activity_account.xml` — adicionados `id`s (`profile_avatar`,
-  `profile_status_dot`) para o Java conseguir atualizar essas views.
-- `android/src/.../ProfileBadgeHelper.java` (novo arquivo) — centraliza a
-  lógica de preencher avatar/status nas 3 telas.
+## Parte 1 — Sidebar, Biblioteca e Login
 
-### Item 4 — Status online real e persistido
-- `android/src/.../LocalAccount.java` — novo campo `online` (default `true`).
-- `android/src/.../AccountStore.java` — persiste/lê esse campo em JSON, e
-  novo método `setAccountOnline(id, online)` pronto para uso futuro com
-  presença real via backend.
-- `android/res/drawable/lumina_offline_dot.xml` (novo arquivo) — par cinza do
-  ponto verde que já existia, para refletir status offline.
+### Sidebar + Biblioteca
+- `android/res/drawable/gmp_sidebar_bg.xml` — gradiente sutil + borda direita
+  no lugar da cor chapada anterior.
+- `android/res/drawable/gmp_nav_item_selected.xml` — item ativo com
+  preenchimento sólido + barra de destaque à esquerda, em vez do tint
+  translúcido genérico.
+- `android/res/drawable/gmp_hero_bg.xml` — banner do topo com 3 camadas
+  (gradiente diagonal + glow radial + fade inferior), mais rico que antes.
+- `android/res/drawable/gmp_game_cover_bg.xml` — capas de jogo com borda
+  sutil para mais definição contra o fundo escuro.
+- `android/res/layout/activity_library.xml` — sidebar redesenhada (mesmos 3
+  destinos: Jogos/Loja/Patches, + engrenagem + avatar); biblioteca com hero
+  banner maior e grid de jogos.
+- `android/res/layout/item_game_card.xml` — cards maiores e mais nítidos.
+- `android/src/.../LibraryActivity.java` — trocado `LinearLayoutManager`
+  horizontal (fileira única) por `GridLayoutManager` vertical multi-coluna,
+  com colunas calculadas pela largura real da tela (mínimo 2). Muda só a
+  **apresentação** — toda a lógica de escaneamento de pastas, permissões e
+  clique para jogar continua igual. Conforme combinado, sem
+  categorias/gêneros — grid único.
+- `android/src/.../GameAdapter.java` — só o raio de cantos ajustado (14dp);
+  nenhuma lógica alterada.
 
-### Item 5 — Vulkan + PSPx8 (4K) como padrão gráfico
-- `Core/Config.cpp` — `DefaultGPUBackend()` agora prefere Vulkan em mais
-  versões de Android (mantendo a blacklist de dispositivos problemáticos
-  intacta); `DefaultInternalResolution()` retorna 8 (PSPx8) em Android.
-- Isso só afeta contas/perfis **novos** — quem já tem config salva não é
-  alterado.
+### Login
+- `android/res/layout/activity_login.xml` — reorganizada de um split
+  horizontal 46/54 (apertava em celular retrato) para coluna única com
+  scroll: hero compacto no topo, formulário completo abaixo. Todos os 8 IDs
+  que `LoginActivity.java` já usava foram preservados — login e cadastro
+  continuam funcionando exatamente como antes. Sem seleção de país, sem
+  campos extras, sem botão de login social inventado.
 
-### Item 6 — Bug do jogo reiniciando ao voltar do segundo plano
-- `android/AndroidManifest.xml` — `configChanges` da `PpssppActivity` agora
-  inclui `orientation|screenSize|screenLayout|smallestScreenSize`, evitando
-  que a Activity seja destruída/recriada por mudança de configuração.
+**Fora de escopo de propósito:** `activity_account.xml` (tela "Minha conta")
+tem o mesmo problema de split apertado, mas não estava na lista de telas
+que o prompt pediu para redesenhar — não mexi nela.
 
-### Item 7 — Autosave dedicado (slot -100)
-Fluxo: `PpssppActivity.onPause()` chama `NativeApp.saveStateForBackground()`
-**antes** de pausar a superfície gráfica (necessário porque salvar um estado
-tira um screenshot do frame atual). Essa chamada roda na UI thread do
-Android, mas o estado do emulador só pode ser tocado pela thread principal
-do motor — então ela despacha o trabalho com `System_RunOnMainThread` e
-espera (bloqueando, com timeout de 500ms) até terminar.
+---
 
-- `android/src/.../NativeApp.java` — novo método nativo `saveStateForBackground()`.
-- `android/src/.../PpssppActivity.java` — chama esse método no início de `onPause()`.
-- `android/jni/app-android.cpp` — implementação JNI bloqueante com timeout.
-- `Common/System/NativeApp.h`, `UI/NativeApp.cpp` — função ponte
-  `GMP_SaveEmulatorStateForBackground()` que acessa a `EmuScreen` atual.
-- `Common/System/System.h` — sem mudanças funcionais nesta versão (a
-  primeira tentativa usava uma `UIMessage` nova, mas foi abandonada por não
-  ser confiável — ver observação abaixo).
-- `UI/EmuScreen.h`, `UI/EmuScreen.cpp` — `AutoSaveOnBackground()` (salva no
-  slot `-100`, dedicado, que nunca colide com os slots normais 0-4) e
-  `AutoLoadBackgroundSaveIfPresent()` (restaura esse slot no boot seguinte,
-  com prioridade sobre o autoload normal, e o apaga depois de usado).
+## Parte 2 — Save State e Configurações do PSP
 
-## Limitação honesta que continua existindo
+Essas duas telas são renderizadas pelo motor em C++ (sistema de UI próprio
+do PPSSPP), não por XML do Android — muito mais interligadas com o resto do
+emulador (achievements, rede, VR, etc.), então a abordagem aqui foi
+diferente: investiguei a fundo antes de reescrever qualquer estrutura.
 
-Mesmo com o timeout de 500ms, ainda existe uma janela mínima em que o
-Android pode matar o processo tão rápido que o autosave não termina a
-tempo. Isso é uma limitação real da plataforma, não um bug do código — o
-próprio pedido original já reconhecia isso ("não é necessário prometer que
-o processo nunca será encerrado pelo sistema").
+### Descoberta principal
+O tema visual `GMP Gameport` (`assets/themes/gmp_gameport.ini`) **já existia
+no projeto**, já é o tema padrão (`Core/Config.cpp`), e já está corretamente
+empacotado no build Android. Ou seja, as cores/identidade visual dessas duas
+telas já deveriam estar corretas antes mesmo desta entrega — não precisei
+(nem devia) recriar esse tema do zero.
+
+### O que realmente precisava de correção
+- `UI/PauseScreen.cpp`, `SaveSlotView::Draw()` — o destaque do slot
+  selecionado usava preto/branco **hardcoded**, ignorando o tema ativo.
+  Corrigido para usar o acento do tema (verde-lima no GMP Gameport), então
+  agora reflete a identidade visual de verdade.
+- `UI/PauseScreen.cpp`, `SaveSlotView::GetContentDimensions()` — a altura
+  declarada do slot (90dp) era menor que a miniatura real dentro dele
+  (94dp,= 47×2), um mismatch pré-existente. Corrigido para 100dp.
+
+### O que foi verificado e não precisou de mudança
+- `UI/GameSettingsScreen.cpp` (Configurações do PSP): nenhuma cor hardcoded
+  fora do tema encontrada — já herda o tema corretamente. A estrutura de
+  abas (Gráficos, Controles, Áudio, Rede, Ferramentas, Sistema) já bate com
+  o que o item 2.5 pede, já é organizada e moderna (inclui busca embutida
+  nas configurações). Reescrever essa estrutura teria alto risco de quebrar
+  comportamento por pouco ganho visual, já que o tema resolve a identidade.
+
+## Não incluído neste zip
+
+`assets/themes/gmp_gameport.ini` não está aqui porque **não foi alterado** —
+já existia correto no repositório antes desta entrega.
 
 ## Não testado por compilação real
 
-Não tenho ambiente com Android SDK/NDK aqui, então tudo foi revisado
-manualmente (includes, assinaturas de função, balanceamento de
-chaves/parênteses, mas **não compilado de fato**. É esperado que o
-`build.yml` no GitHub Actions seja quem valida isso de verdade — se der erro,
-me manda o log que eu corrijo.
-
-## Ainda não implementado
-
-Fase 3 do prompt original (redesign visual das 5 telas: sidebar, Biblioteca,
-login, Save State, configurações do PSP) — combinamos de fazer essa parte
-depois de validar a Fase 2 compilando.
+Como nas entregas anteriores, não tenho ambiente Android SDK/NDK aqui.
+Revisão manual feita (IDs preservados, balanceamento de sintaxe, assinaturas
+de função conferidas), mas o `build.yml` no Actions é quem valida de fato.

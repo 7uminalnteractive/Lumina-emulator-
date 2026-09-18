@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#269AE637" />
-    <corners android:radius="10dp" />
-</shape>
+<!-- GMP Gameport: item de navegação ativo agora tem preenchimento sólido
+     mais uma barra de destaque à esquerda (o padrão de "aba ativa" das
+     referências), em vez do tint translúcido genérico anterior. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:width="3dp" android:gravity="left|center_vertical">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/lumina_blue" />
+            <corners android:radius="2dp" />
+        </shape>
+    </item>
+    <item android:left="6dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/lumina_bg3" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</layer-list>

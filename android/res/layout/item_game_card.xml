@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="150dp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="8dp"
@@ -13,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="150dp"
         android:background="@drawable/gmp_game_cover_bg"
-        android:elevation="2dp">
+        android:elevation="3dp">
 
         <TextView
             android:id="@+id/game_initials"
@@ -22,8 +22,8 @@
             android:layout_gravity="center"
             android:fontFamily="sans-serif-condensed"
             android:textStyle="bold"
-            android:textSize="40sp"
-            android:textColor="#33FFFFFF" />
+            android:textSize="34sp"
+            android:textColor="#40FFFFFF" />
 
         <ImageView
             android:id="@+id/game_cover_image"
@@ -38,9 +38,9 @@
         android:id="@+id/game_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="9dp"
         android:textColor="@color/lumina_text"
-        android:textSize="14sp"
+        android:textSize="13.5sp"
         android:textStyle="bold"
         android:maxLines="1"
         android:ellipsize="end" />
@@ -50,7 +50,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="@color/lumina_muted"
-        android:textSize="12sp"
+        android:textSize="11.5sp"
         android:layout_marginTop="2dp" />
 
 </LinearLayout>

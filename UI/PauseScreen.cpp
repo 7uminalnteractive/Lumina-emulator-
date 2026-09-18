@@ -208,7 +208,10 @@ public:
 	SaveSlotView(std::string_view saveStatePrefix, int slot, UI::LayoutParams *layoutParams = nullptr);
 
 	void GetContentDimensions(const UIContext &dc, float &w, float &h) const override {
-		w = 500; h = 90;
+		// GMP Gameport: a miniatura (AsyncImageFileView abaixo) já tinha 94dp
+		// de altura (47*2), maior que os 90dp declarados aqui -- ajustado
+		// para caber corretamente, sem mudar nada do conteúdo do slot.
+		w = 500; h = 100;
 	}
 
 	void Draw(UIContext &dc) override;
@@ -306,8 +309,12 @@ SaveSlotView::SaveSlotView(std::string_view saveStatePrefix, int slot, UI::Layou
 
 void SaveSlotView::Draw(UIContext &dc) {
 	if (g_Config.iCurrentStateSlot == slot_) {
+		// GMP Gameport: usa o acento do tema ativo (lima no tema GMP Gameport)
+		// em vez do preto/branco translúcido fixo do PPSSPP original, para que
+		// o slot selecionado reflita a identidade visual do app.
+		uint32_t accent = dc.GetTheme().itemFocusedStyle.background.color;
 		dc.FillRect(UI::Drawable(0x70000000), GetBounds().Expand(3));
-		dc.FillRect(UI::Drawable(0x70FFFFFF), GetBounds().Expand(3));
+		dc.FillRect(UI::Drawable((accent & 0x00FFFFFF) | 0x70000000), GetBounds().Expand(3));
 	}
 	UI::LinearLayout::Draw(dc);
 }
