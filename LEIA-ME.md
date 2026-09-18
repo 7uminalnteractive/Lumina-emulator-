@@ -1,90 +1,53 @@
-# GMP Gameport — Fase 3 (redesign visual) completa
+# GMP Gameport — Save State estilo PS5
 
-Este zip contém **todos os arquivos alterados** da Fase 3, partes 1 e 2
-juntas. Extraia por cima da raiz do repositório e commite.
+Este zip contém **apenas o arquivo alterado**. Extraia por cima da raiz do
+repositório (substitui `UI/PauseScreen.cpp`) e commite.
 
-Cobre os itens 2.1 (Sidebar), 2.2 (Biblioteca), 2.3 (Login), 2.4 (Save
-State) e 2.5 (Configurações do PSP) do prompt original.
+## O que mudou
 
----
+A tela de Save State foi redesenhada para se parecer com os cards de save
+do PS5 (ver referência que você mandou), em vez da lista vertical numerada
+que existia antes.
 
-## Parte 1 — Sidebar, Biblioteca e Login
+### Antes
+Cada slot era uma linha horizontal: número → miniatura pequena (164×94) →
+coluna de texto com botões "Salvar state"/"Carregar state" e a data. As 5
+linhas ficavam empilhadas verticalmente, com scroll vertical.
 
-### Sidebar + Biblioteca
-- `android/res/drawable/gmp_sidebar_bg.xml` — gradiente sutil + borda direita
-  no lugar da cor chapada anterior.
-- `android/res/drawable/gmp_nav_item_selected.xml` — item ativo com
-  preenchimento sólido + barra de destaque à esquerda, em vez do tint
-  translúcido genérico.
-- `android/res/drawable/gmp_hero_bg.xml` — banner do topo com 3 camadas
-  (gradiente diagonal + glow radial + fade inferior), mais rico que antes.
-- `android/res/drawable/gmp_game_cover_bg.xml` — capas de jogo com borda
-  sutil para mais definição contra o fundo escuro.
-- `android/res/layout/activity_library.xml` — sidebar redesenhada (mesmos 3
-  destinos: Jogos/Loja/Patches, + engrenagem + avatar); biblioteca com hero
-  banner maior e grid de jogos.
-- `android/res/layout/item_game_card.xml` — cards maiores e mais nítidos.
-- `android/src/.../LibraryActivity.java` — trocado `LinearLayoutManager`
-  horizontal (fileira única) por `GridLayoutManager` vertical multi-coluna,
-  com colunas calculadas pela largura real da tela (mínimo 2). Muda só a
-  **apresentação** — toda a lógica de escaneamento de pastas, permissões e
-  clique para jogar continua igual. Conforme combinado, sem
-  categorias/gêneros — grid único.
-- `android/src/.../GameAdapter.java` — só o raio de cantos ajustado (14dp);
-  nenhuma lógica alterada.
+### Agora
+Cada slot é um **card vertical** (280×170), com a miniatura preenchendo o
+card inteiro — como uma capa de jogo. Por cima da miniatura:
+- Número do slot no canto superior esquerdo, com sombra para ler bem sobre
+  qualquer imagem de fundo.
+- Uma faixa escura (scrim) na parte de baixo do card, com a data do save e
+  os botões "Salvar state"/"Carregar state" sobrepostos nela — para ficarem
+  legíveis em cima da miniatura, do jeito que os cards do PS5 fazem.
 
-### Login
-- `android/res/layout/activity_login.xml` — reorganizada de um split
-  horizontal 46/54 (apertava em celular retrato) para coluna única com
-  scroll: hero compacto no topo, formulário completo abaixo. Todos os 8 IDs
-  que `LoginActivity.java` já usava foram preservados — login e cadastro
-  continuam funcionando exatamente como antes. Sem seleção de país, sem
-  campos extras, sem botão de login social inventado.
+Os 5 cards agora ficam lado a lado num **carrossel horizontal com scroll
+próprio**, em vez de empilhados verticalmente. O resto da tela de pause
+(coluna de ações à direita: Continuar, Configurações, etc.; avisos de rede;
+resumo de conquistas) não foi tocado — só a área dos slots mudou.
 
-**Fora de escopo de propósito:** `activity_account.xml` (tela "Minha conta")
-tem o mesmo problema de split apertado, mas não estava na lista de telas
-que o prompt pediu para redesenhar — não mexi nela.
+## O que foi preservado (nada de lógica mudou)
 
----
+- Salvar estado, carregar estado, confirmação antes de carregar.
+- Seleção de slot clicando no número (com destaque visual do slot ativo).
+- Clique na miniatura para ver o save em tela cheia.
+- Undo de save/load, rewind, modo hardcore de conquistas (que desativa o
+  botão de carregar quando ativo) — tudo intacto.
+- Os 5 slots continuam sendo os mesmos 5 slots de sempre; não mexi no
+  sistema de save state em si, só em como os cards são desenhados.
 
-## Parte 2 — Save State e Configurações do PSP
+## Detalhe técnico (para quem for revisar o código)
 
-Essas duas telas são renderizadas pelo motor em C++ (sistema de UI próprio
-do PPSSPP), não por XML do Android — muito mais interligadas com o resto do
-emulador (achievements, rede, VR, etc.), então a abordagem aqui foi
-diferente: investiguei a fundo antes de reescrever qualquer estrutura.
-
-### Descoberta principal
-O tema visual `GMP Gameport` (`assets/themes/gmp_gameport.ini`) **já existia
-no projeto**, já é o tema padrão (`Core/Config.cpp`), e já está corretamente
-empacotado no build Android. Ou seja, as cores/identidade visual dessas duas
-telas já deveriam estar corretas antes mesmo desta entrega — não precisei
-(nem devia) recriar esse tema do zero.
-
-### O que realmente precisava de correção
-- `UI/PauseScreen.cpp`, `SaveSlotView::Draw()` — o destaque do slot
-  selecionado usava preto/branco **hardcoded**, ignorando o tema ativo.
-  Corrigido para usar o acento do tema (verde-lima no GMP Gameport), então
-  agora reflete a identidade visual de verdade.
-- `UI/PauseScreen.cpp`, `SaveSlotView::GetContentDimensions()` — a altura
-  declarada do slot (90dp) era menor que a miniatura real dentro dele
-  (94dp,= 47×2), um mismatch pré-existente. Corrigido para 100dp.
-
-### O que foi verificado e não precisou de mudança
-- `UI/GameSettingsScreen.cpp` (Configurações do PSP): nenhuma cor hardcoded
-  fora do tema encontrada — já herda o tema corretamente. A estrutura de
-  abas (Gráficos, Controles, Áudio, Rede, Ferramentas, Sistema) já bate com
-  o que o item 2.5 pede, já é organizada e moderna (inclui busca embutida
-  nas configurações). Reescrever essa estrutura teria alto risco de quebrar
-  comportamento por pouco ganho visual, já que o tema resolve a identidade.
-
-## Não incluído neste zip
-
-`assets/themes/gmp_gameport.ini` não está aqui porque **não foi alterado** —
-já existia correto no repositório antes desta entrega.
+Criei uma pequena classe auxiliar `ScrimView` só para desenhar a faixa
+escura atrás do texto/botões, inserida na árvore de views **entre** a
+miniatura e o conteúdo de texto — isso garante que ela fica por cima da
+imagem mas por baixo do texto (ordem de inserção = ordem de desenho), sem
+precisar de nenhum hack de desenho manual fora de ordem.
 
 ## Não testado por compilação real
 
-Como nas entregas anteriores, não tenho ambiente Android SDK/NDK aqui.
-Revisão manual feita (IDs preservados, balanceamento de sintaxe, assinaturas
-de função conferidas), mas o `build.yml` no Actions é quem valida de fato.
+Revisão manual feita (balanceamento de chaves/parênteses no arquivo
+inteiro, assinaturas de método conferidas, nenhuma referência quebrada),
+mas não compilado de fato aqui — o `build.yml` no Actions valida isso.

@@ -42,19 +42,15 @@ public class StoreActivity extends AppCompatActivity {
             finish();
         });
 
-        View patchesTab = findViewById(R.id.tab_media);
-        patchesTab.setOnClickListener(v ->
-                startActivity(new Intent(this, PatchesActivity.class)));
-
-        View settingsButton = findViewById(R.id.btn_settings);
-        settingsButton.setOnClickListener(v -> {
+        View settingsTab = findViewById(R.id.tab_settings);
+        settingsTab.setOnClickListener(v -> {
             Intent intent = new Intent(this, PpssppActivity.class);
             intent.putExtra(PpssppActivity.ARGS_EXTRA_KEY, "--start-screen=gamesettings");
             startActivity(intent);
         });
 
-        View profileButton = findViewById(R.id.profile_avatar);
-        profileButton.setOnClickListener(v ->
+        View profileTab = findViewById(R.id.tab_profile);
+        profileTab.setOnClickListener(v ->
                 startActivity(new Intent(this, AccountActivity.class)));
     }
 

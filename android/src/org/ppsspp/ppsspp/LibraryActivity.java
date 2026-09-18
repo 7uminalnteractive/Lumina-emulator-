@@ -70,8 +70,8 @@ public class LibraryActivity extends AppCompatActivity {
         Button grantAccessButton = findViewById(R.id.btn_pick_folder);
         grantAccessButton.setOnClickListener(v -> requestStorageAccess());
 
-        View settingsButton = findViewById(R.id.btn_settings);
-        settingsButton.setOnClickListener(v -> {
+        View settingsTab = findViewById(R.id.tab_settings);
+        settingsTab.setOnClickListener(v -> {
             // Lumina: skip PPSSPP's MainScreen and jump straight to Settings.
             // "--start-screen=gamesettings" is parsed on a fresh process boot
             // (Core/CmdLine.cpp), and also explicitly handled as a native message
@@ -82,13 +82,9 @@ public class LibraryActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        View profileButton = findViewById(R.id.profile_avatar);
-        profileButton.setOnClickListener(v ->
+        View profileTab = findViewById(R.id.tab_profile);
+        profileTab.setOnClickListener(v ->
                 startActivity(new Intent(this, AccountActivity.class)));
-
-        View patchesTab = findViewById(R.id.tab_media);
-        patchesTab.setOnClickListener(v ->
-                startActivity(new Intent(this, PatchesActivity.class)));
 
         View storeTab = findViewById(R.id.tab_store);
         storeTab.setOnClickListener(v ->

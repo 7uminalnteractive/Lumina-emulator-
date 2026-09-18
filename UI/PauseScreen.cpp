@@ -203,15 +203,33 @@ void ScreenshotViewScreen::OnDeleteState(UI::EventParams &e) {
 	}));
 }
 
-class SaveSlotView : public UI::LinearLayout {
+// GMP Gameport: view auxiliar simples que só preenche seus bounds com uma
+// cor sólida -- usada como scrim (faixa escura) atrás da data/botões dos
+// cards de Save State, para dar legibilidade por cima da miniatura sem
+// escurecer o texto/botões junto (que ficam por cima dela, inseridos depois
+// na árvore).
+class ScrimView : public UI::View {
+public:
+	ScrimView(uint32_t color, UI::LayoutParams *layoutParams) : UI::View(layoutParams), color_(color) {}
+	void GetContentDimensions(const UIContext &dc, float &w, float &h) const override {
+		w = 0; h = 0;
+	}
+	void Draw(UIContext &dc) override {
+		dc.FillRect(UI::Drawable(color_), GetBounds());
+	}
+private:
+	uint32_t color_;
+};
+
+class SaveSlotView : public UI::AnchorLayout {
 public:
 	SaveSlotView(std::string_view saveStatePrefix, int slot, UI::LayoutParams *layoutParams = nullptr);
 
 	void GetContentDimensions(const UIContext &dc, float &w, float &h) const override {
-		// GMP Gameport: a miniatura (AsyncImageFileView abaixo) já tinha 94dp
-		// de altura (47*2), maior que os 90dp declarados aqui -- ajustado
-		// para caber corretamente, sem mudar nada do conteúdo do slot.
-		w = 500; h = 100;
+		// GMP Gameport: card vertical estilo PS5 -- mais largo que alto ao
+		// estilo "capa de jogo" (280x170), a miniatura ocupa o card inteiro
+		// e número/data/botões ficam sobrepostos por cima dela.
+		w = 280; h = 170;
 	}
 
 	void Draw(UIContext &dc) override;
@@ -246,44 +264,51 @@ private:
 	Path screenshotFilename_;
 };
 
-SaveSlotView::SaveSlotView(std::string_view saveStatePrefix, int slot, UI::LayoutParams *layoutParams) : UI::LinearLayout(ORIENT_HORIZONTAL, layoutParams), slot_(slot), saveStatePrefix_(saveStatePrefix) {
+SaveSlotView::SaveSlotView(std::string_view saveStatePrefix, int slot, UI::LayoutParams *layoutParams) : UI::AnchorLayout(layoutParams), slot_(slot), saveStatePrefix_(saveStatePrefix) {
 	using namespace UI;
 
 	screenshotFilename_ = SaveState::GenerateSaveSlotPath(saveStatePrefix_, slot, SaveState::SCREENSHOT_EXTENSION);
 
 	std::string number = StringFromFormat("%d", slot + 1);
-	Add(new Spacer(5));
+
+	// GMP Gameport: o card inteiro é a miniatura (estilo capa de jogo do
+	// PS5), em vez de um thumbnail pequeno ao lado de uma coluna de texto.
+	AsyncImageFileView *fv = Add(new AsyncImageFileView(screenshotFilename_, IS_DEFAULT, new AnchorLayoutParams(FILL_PARENT, FILL_PARENT, 0, 0, 0, 0)));
+
+	auto pa = GetI18NCategory(I18NCat::PAUSE);
+	auto sy = GetI18NCategory(I18NCat::SYSTEM);
+
+	// GMP Gameport: scrim inserido ANTES do texto/botões (mas DEPOIS da
+	// imagem) na árvore, então é desenhado por cima da miniatura e por baixo
+	// do conteúdo da faixa inferior -- exatamente a ordem de camadas que dá
+	// o efeito do card do PS5.
+	Add(new ScrimView(0xD0000000, new AnchorLayoutParams(FILL_PARENT, 78, 0, NONE, 0, 0)));
 
 	// TEMP HACK: use some other view, like a Choice, themed differently to enable keyboard access to selection.
-	ClickableTextView *numberView = Add(new ClickableTextView(number, new LinearLayoutParams(40.0f, WRAP_CONTENT, 0.0f, Gravity::G_VCENTER)));
+	ClickableTextView *numberView = Add(new ClickableTextView(number, new AnchorLayoutParams(WRAP_CONTENT, WRAP_CONTENT, 10, 8, NONE, NONE)));
 	numberView->SetBig(true);
+	numberView->SetShadow(true);
 	numberView->OnClick.Add([this](UI::EventParams &e) {
 		e.v = this;
 		OnSelected.Trigger(e);
 	});
 
-	AsyncImageFileView *fv = Add(new AsyncImageFileView(screenshotFilename_, IS_DEFAULT, new UI::LayoutParams(82 * 2, 47 * 2)));
-
-	auto pa = GetI18NCategory(I18NCat::PAUSE);
-	auto sy = GetI18NCategory(I18NCat::SYSTEM);
-
-	LinearLayout *lines = new LinearLayout(ORIENT_VERTICAL, new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT));
-	lines->SetSpacing(2.0f);
-
-	Add(lines);
-
-	LinearLayout *buttons = new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT));
-	buttons->SetSpacing(10.0f);
-
-	lines->Add(buttons);
-
-	saveStateButton_ = buttons->Add(new Button(pa->T("Save State"), new LinearLayoutParams(0.0, Gravity::G_VCENTER)));
-	saveStateButton_->OnClick.Handle(this, &SaveSlotView::OnSaveState);
-
 	fv->OnClick.Add([this](UI::EventParams &e) {
 		e.v = this;
 		OnScreenshotClicked.Trigger(e);
 	});
+
+	// GMP Gameport: faixa inferior sobreposta (data + botões), como os
+	// cards de save do PS5 -- em vez de uma coluna de texto ao lado.
+	LinearLayout *bottomBar = Add(new LinearLayout(ORIENT_VERTICAL, new AnchorLayoutParams(FILL_PARENT, WRAP_CONTENT, 0, NONE, 0, 0)));
+	bottomBar->SetSpacing(4.0f);
+
+	LinearLayout *buttons = new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT, Margins(8, 6, 8, 2)));
+	buttons->SetSpacing(8.0f);
+	bottomBar->Add(buttons);
+
+	saveStateButton_ = buttons->Add(new Button(pa->T("Save State"), new LinearLayoutParams(0.0, Gravity::G_VCENTER)));
+	saveStateButton_->OnClick.Handle(this, &SaveSlotView::OnSaveState);
 
 	if (SaveState::HasSaveInSlot(saveStatePrefix_, slot_)) {
 		if (!Achievements::HardcoreModeActive()) {
@@ -298,9 +323,10 @@ SaveSlotView::SaveSlotView(std::string_view saveStatePrefix, int slot, UI::Layou
 		}
 
 		if (!dateStr.empty()) {
-			TextView *dateView = new TextView(dateStr, new LinearLayoutParams(0.0, Gravity::G_VCENTER));
+			TextView *dateView = new TextView(dateStr, new LinearLayoutParams(Margins(8, 0, 8, 6)));
 			dateView->SetSmall(true);
-			lines->Add(dateView)->SetShadow(true);
+			dateView->SetShadow(true);
+			bottomBar->Add(dateView);
 		}
 	} else {
 		fv->SetFilename(Path());
@@ -311,12 +337,13 @@ void SaveSlotView::Draw(UIContext &dc) {
 	if (g_Config.iCurrentStateSlot == slot_) {
 		// GMP Gameport: usa o acento do tema ativo (lima no tema GMP Gameport)
 		// em vez do preto/branco translúcido fixo do PPSSPP original, para que
-		// o slot selecionado reflita a identidade visual do app.
+		// o card selecionado reflita a identidade visual do app. Desenhado
+		// antes dos filhos (a borda fica atrás da miniatura, só aparecendo
+		// como um contorno ao redor do card por causa do Expand(3)).
 		uint32_t accent = dc.GetTheme().itemFocusedStyle.background.color;
-		dc.FillRect(UI::Drawable(0x70000000), GetBounds().Expand(3));
-		dc.FillRect(UI::Drawable((accent & 0x00FFFFFF) | 0x70000000), GetBounds().Expand(3));
+		dc.FillRect(UI::Drawable((accent & 0x00FFFFFF) | 0xFF000000), GetBounds().Expand(3));
 	}
-	UI::LinearLayout::Draw(dc);
+	UI::AnchorLayout::Draw(dc);
 }
 
 void SaveSlotView::OnLoadState(UI::EventParams &e) {
@@ -407,8 +434,21 @@ void GamePauseScreen::CreateSavestateControls(UI::LinearLayout *leftColumnItems,
 	using namespace UI;
 
 	leftColumnItems->SetSpacing(10.0);
+
+	// GMP Gameport: os 5 cards de save ficam num carrossel horizontal
+	// dedicado (estilo PS5), em vez de empilhados verticalmente um embaixo
+	// do outro como no PPSSPP original. Esse carrossel é adicionado como um
+	// único item dentro do leftColumnItems (que continua vertical), então o
+	// resto do conteúdo que também mora ali (avisos de rede, resumo de
+	// conquistas, etc, adicionados por quem chama este método) continua
+	// empilhado normalmente acima/abaixo dele.
+	ScrollView *slotCarousel = leftColumnItems->Add(new ScrollView(ORIENT_HORIZONTAL, new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT)));
+	slotCarousel->SetShadows(false);
+	LinearLayout *slotRow = slotCarousel->Add(new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT)));
+	slotRow->SetSpacing(12.0f);
+
 	for (int i = 0; i < g_Config.iSaveStateSlotCount; i++) {
-		SaveSlotView *slot = leftColumnItems->Add(new SaveSlotView(saveStatePrefix_, i, new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT, Gravity::G_HCENTER, Margins(0,0,0,0))));
+		SaveSlotView *slot = slotRow->Add(new SaveSlotView(saveStatePrefix_, i, new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity::G_TOPLEFT, Margins(0,0,0,0))));
 		slot->OnStateLoaded.Handle(this, &GamePauseScreen::OnState);
 		slot->OnStateSaved.Handle(this, &GamePauseScreen::OnState);
 		slot->OnLoadRequested.Add([this](UI::EventParams &e) {

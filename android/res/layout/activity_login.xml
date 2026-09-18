@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- GMP Gameport: redesenhada como coluna única (hero compacto + formulário
-     abaixo), em vez do split horizontal 46/54 anterior - que deixava pouco
+     abaixo), em vez do split horizontal 46/54 anterior -- que deixava pouco
      espaço para os campos em telas de celular no modo retrato. Mantém a
      mesma identidade visual (gmp_login_hero_bg com o glow verde, o símbolo
      em card branco, os números de destaque), só reorganizada verticalmente. -->
@@ -130,39 +130,32 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="28dp"
-            android:paddingTop="28dp"
-            android:paddingBottom="32dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/gmp_badge_bg"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="5dp"
-                android:text="Conta"
-                android:textColor="@color/lumina_blue"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="16dp" />
+            android:background="@drawable/gmp_login_form_bg"
+            android:layout_marginHorizontal="18dp"
+            android:layout_marginTop="-22dp"
+            android:layout_marginBottom="28dp"
+            android:elevation="4dp"
+            android:paddingHorizontal="22dp"
+            android:paddingTop="26dp"
+            android:paddingBottom="26dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Bem-vindo de volta"
                 android:textColor="@color/lumina_text"
-                android:textSize="24sp"
+                android:textSize="22sp"
                 android:fontFamily="sans-serif-condensed"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="26dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="24dp"
                 android:text="Entre na sua conta para acessar sua biblioteca."
                 android:textColor="@color/lumina_muted"
-                android:textSize="14sp" />
+                android:textSize="13.5sp" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -254,7 +247,7 @@
                 android:textColor="@color/lumina_muted"
                 android:textSize="13.5sp"
                 android:checked="true"
-                android:layout_marginBottom="20dp" />
+                android:layout_marginBottom="22dp" />
 
             <TextView
                 android:id="@+id/login_error_text"
