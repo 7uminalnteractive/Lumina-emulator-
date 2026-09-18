@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- GMP Gameport: redesenhada como coluna única (hero compacto + formulário
-     abaixo), em vez do split horizontal 46/54 anterior -- que deixava pouco
+     abaixo), em vez do split horizontal 46/54 anterior - que deixava pouco
      espaço para os campos em telas de celular no modo retrato. Mantém a
      mesma identidade visual (gmp_login_hero_bg com o glow verde, o símbolo
      em card branco, os números de destaque), só reorganizada verticalmente. -->
