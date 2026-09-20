@@ -348,6 +348,10 @@ public:
 	std::string sStateUndoLastSaveGame;
 	int iStateUndoLastSaveSlot;
 	int iAutoLoadSaveState; // 0 = off, 1 = oldest (deprecated), 2 = newest, 3+ = slot number + 3 (up to 5)
+	// GMP Gameport: liga/desliga o autosave dedicado ao minimizar o app
+	// (slot -100, separado dos slots 0-4 do usuário). Ver item 6/7 do prompt
+	// original e EmuScreen::AutoSaveOnBackground().
+	bool bGMPBackgroundAutoSaveEnabled;
 	int iSaveStateSlotCount;
 	bool bEnableCheats;
 	bool bReloadCheats;

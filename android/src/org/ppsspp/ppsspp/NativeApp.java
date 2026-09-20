@@ -59,6 +59,11 @@ public class NativeApp {
 	// item 6/7 of the GMP Gameport prompt for why this exists.
 	public static native void saveStateForBackground();
 
+	// GMP Gameport: sincroniza o apelido de rede/AdHoc (Nickname) e o nome
+	// de usuário de infraestrutura com o nome da conta GMP ativa. Chamado
+	// sempre que a conta muda -- ver AccountStore.java.
+	public static native void syncNicknameFromAccount(String accountName);
+
 	public static native void shutdown();
 
 	public static native boolean keyDown(int deviceId, int key, boolean isRepeat);

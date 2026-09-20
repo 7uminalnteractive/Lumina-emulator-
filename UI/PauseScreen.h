@@ -51,6 +51,26 @@ protected:
 	}
 	void OnVKey(VirtKey virtualKeyCode, bool down) override;
 
+	// GMP Gameport: sem isso, o ScreenManager considera esta tela opaca e
+	// simplesmente não desenha a EmuScreen (o jogo pausado) por trás dela --
+	// resultando no fundo preto sólido que o usuário via. Com isTransparent()
+	// true, o jogo continua sendo renderizado atrás do menu, e DrawBackground()
+	// abaixo desenha só um véu escuro translúcido por cima dele (em vez do
+	// preto opaco), para o menu continuar legível sem esconder o jogo.
+	bool isTransparent() const override {
+		return true;
+	}
+	// GMP Gameport: EmuScreen::renderRole() só se oferece como fundo quando
+	// g_Config.bRunBehindPauseMenu está ligado (configuração manual do
+	// usuário) OU quando a tela do topo pede isso via wantBrightBackground()
+	// -- o mesmo mecanismo que DisplayLayoutScreen já usa. Sem isto, o jogo
+	// só apareceria atrás do menu de pausa se o usuário tivesse ativado
+	// manualmente aquela opção; queremos que apareça sempre, por padrão.
+	bool wantBrightBackground() const override {
+		return true;
+	}
+	void DrawBackground(UIContext &ui) override;
+
 private:
 	void CreateSavestateControls(UI::LinearLayout *viewGroup, UI::LinearLayout **extraRow);
 
@@ -62,7 +82,7 @@ private:
 	void OnDeleteConfig(UI::EventParams &e);
 
 	void OnState(UI::EventParams &e);
-	void ShowContextMenu(UI::View *menuButton, bool portrait);
+	void ShowContextMenu(UI::View *menuButton);
 
 	void AddExtraOptions(UI::ViewGroup *parent);
 

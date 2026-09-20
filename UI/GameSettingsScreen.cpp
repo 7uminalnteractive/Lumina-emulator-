@@ -56,6 +56,7 @@
 #include "UI/TouchControlVisibilityScreen.h"
 #include "UI/TiltAnalogSettingsScreen.h"
 #include "UI/MemStickScreen.h"
+#include "UI/MiscScreens.h"
 #include "UI/Theme.h"
 #include "UI/RetroAchievementScreens.h"
 #include "UI/OnScreenDisplay.h"
@@ -1385,6 +1386,22 @@ void GameSettingsScreen::CreateSystemSettings(UI::ViewGroup *systemSettings) {
 	PopupSliderChoice *rewindInterval = systemSettings->Add(new PopupSliderChoice(&g_Config.iRewindSnapshotInterval, 0, 60, 0, sy->T("Rewind Snapshot Interval"), screenManager(), di->T("seconds, 0:off")));
 	rewindInterval->SetFormat(di->T("%d seconds"));
 	rewindInterval->SetZeroLabel(sy->T("Off"));
+
+	// GMP Gameport: liga/desliga o autosave dedicado que preserva o
+	// progresso ao minimizar o app (item 6/7 do prompt original), e um
+	// botão para apagar manualmente o último autosave desse jogo -- pedido
+	// explícito do usuário, separado do controle dos 5 slots normais acima.
+	systemSettings->Add(new CheckBox(&g_Config.bGMPBackgroundAutoSaveEnabled, sy->T("Auto save on minimize")));
+	systemSettings->Add(new SettingHint(sy->T("Automatically saves your progress when you minimize the app, so it can be restored if Android closes it in the background"), nullptr));
+
+	Choice *deleteAutoSave = systemSettings->Add(new Choice(sy->T("Delete last auto save")));
+	deleteAutoSave->OnClick.Add([this](UI::EventParams &e) {
+		screenManager()->push(new PromptScreen(gamePath_, sy->T("Delete this game's auto save?"), di->T("Yes"), di->T("No"), [](bool result) {
+			if (result) {
+				EmuScreen::DeleteBackgroundAutoSave();
+			}
+		}));
+	});
 
 	systemSettings->Add(new ItemHeader(sy->T("General")));
 

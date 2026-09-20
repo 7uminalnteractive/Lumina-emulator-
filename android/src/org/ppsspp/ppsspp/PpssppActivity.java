@@ -441,6 +441,19 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 	}
 
 	public void Initialize() {
+		// GMP Gameport: sincroniza o apelido de rede/AdHoc com o nome da
+		// conta GMP ativa assim que a lib nativa estiver disponível (não
+		// pode ser feito antes -- LoginActivity/ProfileSelectorActivity não
+		// carregam libppsspp_jni, então chamar o método nativo de lá
+		// causaria UnsatisfiedLinkError). Isso cobre login novo, troca de
+		// perfil e qualquer mudança de nome, já que sempre passa por aqui
+		// antes do jogo rodar.
+		AccountStore accountStore = new AccountStore(this);
+		LocalAccount activeAccount = accountStore.getActiveAccount();
+		if (activeAccount != null && activeAccount.displayName != null && !activeAccount.displayName.trim().isEmpty()) {
+			NativeApp.syncNicknameFromAccount(activeAccount.displayName.trim());
+		}
+
 		// Initialize audio classes. Do this here since detectOptimalAudioSettings()
 		// needs audioManager
 		this.audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
@@ -1158,6 +1171,16 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 	protected void onResume() {
 		super.onResume();
 		lifeCycle.onResume();
+
+		// GMP Gameport: rede de segurança para quando a conta é trocada (via
+		// ProfileSelectorActivity) sem o processo ser reiniciado -- diferente
+		// de Initialize(), que só roda uma vez por processo, onResume() roda
+		// toda vez que esta Activity volta ao topo, inclusive nesse caso.
+		AccountStore accountStore = new AccountStore(this);
+		LocalAccount activeAccount = accountStore.getActiveAccount();
+		if (activeAccount != null && activeAccount.displayName != null && !activeAccount.displayName.trim().isEmpty()) {
+			NativeApp.syncNicknameFromAccount(activeAccount.displayName.trim());
+		}
 
 		updateSustainedPerformanceMode();
 		sizeManager.onResume();

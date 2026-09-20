@@ -1001,6 +1001,28 @@ extern "C" void Java_org_ppsspp_ppsspp_NativeApp_saveStateForBackground(JNIEnv *
 	}
 }
 
+// GMP Gameport: chamado do lado Java sempre que a conta ativa muda (login,
+// troca de perfil, nome atualizado) para que o apelido de rede/AdHoc
+// (g_Config.sNickName) e o nome de usuário de infraestrutura
+// (g_Config.sInfrastructureUsername) fiquem sincronizados com o nome da
+// conta GMP -- em vez do usuário ter que digitar manualmente em
+// Configurações > Rede, como o PPSSPP original exige. Usa exatamente a
+// mesma sanitização (SanitizeString com AlphaNumDashUnderscore, 3-16
+// caracteres) que a tela de Configurações já aplica no nickname, para o
+// nome resultante ser sempre válido para AdHoc/infraestrutura.
+extern "C" void Java_org_ppsspp_ppsspp_NativeApp_syncNicknameFromAccount(JNIEnv *env, jclass, jstring jaccountName) {
+	std::string accountName = GetJavaString(env, jaccountName);
+	std::string sanitized = SanitizeString(accountName, StringRestriction::AlphaNumDashUnderscore, 3, 16);
+	if (sanitized.empty()) {
+		// Nome muito curto ou sem nenhum caractere válido depois de
+		// sanitizar (ex: só emojis) -- não sobrescreve com algo vazio,
+		// mantém o que já estava configurado.
+		return;
+	}
+	g_Config.sNickName = sanitized;
+	g_Config.sInfrastructureUsername = sanitized;
+}
+
 extern "C" void Java_org_ppsspp_ppsspp_NativeApp_shutdown(JNIEnv *, jclass) {
 	INFO_LOG(Log::System, "NativeApp.shutdown() -- begin");
 

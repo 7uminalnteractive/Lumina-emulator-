@@ -245,6 +245,12 @@ static const ConfigSetting generalSettings[] = {
 
 	ConfigSetting("DisableHTTPS", SETTING(g_Config, bDisableHTTPS), false, CfgFlag::DONT_SAVE),
 	ConfigSetting("AutoLoadSaveState", SETTING(g_Config, iAutoLoadSaveState), 0, CfgFlag::PER_GAME),
+	// GMP Gameport: liga/desliga o autosave dedicado que preserva o progresso
+	// quando o app é minimizado (ver EmuScreen::AutoSaveOnBackground(), item
+	// 6/7 do prompt original). Ligado por padrão. É uma preferência global
+	// (CfgFlag::DEFAULT), não por jogo, já que é sobre o comportamento do
+	// app ao ser minimizado, não sobre um jogo específico.
+	ConfigSetting("GMPBackgroundAutoSaveEnabled", SETTING(g_Config, bGMPBackgroundAutoSaveEnabled), true, CfgFlag::DEFAULT),
 	ConfigSetting("EnableCheats", SETTING(g_Config, bEnableCheats), false, CfgFlag::PER_GAME | CfgFlag::REPORT),
 	ConfigSetting("EnablePlugins", SETTING(g_Config, bEnablePlugins), true, CfgFlag::PER_GAME | CfgFlag::REPORT),
 	ConfigSetting("CwCheatRefreshRate", SETTING(g_Config, iCwCheatRefreshIntervalMs), 77, CfgFlag::PER_GAME),
@@ -831,7 +837,11 @@ static int DefaultGamePreviewVolume() {
 }
 
 std::string DefaultProAdhocServer() {
-	return "socom.cc";
+	// GMP Gameport: o app é focado em jogos de futebol brasileiros (ver o
+	// nome do projeto e o catálogo de patches), então o relé Ad Hoc padrão
+	// é o Relay Brasileiro em vez do "Socom Adhoc Server" (socom.cc) que o
+	// PPSSPP usa por padrão -- latência bem menor para quem está no Brasil.
+	return "jpa36a7.glddns.com";
 }
 
 bool DefaultAudioMixWithOthers() {
@@ -1073,7 +1083,7 @@ static const ConfigSetting controlSettings[] = {
 static const std::vector<std::string_view> emptyList;
 
 static const ConfigSetting networkSettings[] = {
-	ConfigSetting("EnableWlan", SETTING(g_Config, bEnableWlan), false, CfgFlag::PER_GAME),
+	ConfigSetting("EnableWlan", SETTING(g_Config, bEnableWlan), true, CfgFlag::PER_GAME),
 	ConfigSetting("EnableAdhocServer", SETTING(g_Config, bEnableAdhocServer), false, CfgFlag::PER_GAME),
 	ConfigSetting("proAdhocServer", SETTING(g_Config, sProAdhocServer), &DefaultProAdhocServer, CfgFlag::PER_GAME),
 	ConfigSetting("AdhocServerRelayMode", SETTING(g_Config, iAdhocServerRelayMode), (int)AdhocServerRelayMode::Auto, CfgFlag::PER_GAME),

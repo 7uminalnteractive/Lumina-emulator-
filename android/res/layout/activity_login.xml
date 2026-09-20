@@ -1,279 +1,260 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- GMP Gameport: redesenhada como coluna única (hero compacto + formulário
-     abaixo), em vez do split horizontal 46/54 anterior - que deixava pouco
-     espaço para os campos em telas de celular no modo retrato. Mantém a
-     mesma identidade visual (gmp_login_hero_bg com o glow verde, o símbolo
-     em card branco, os números de destaque), só reorganizada verticalmente. -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- GMP Gameport: esta tela é travada em paisagem (android:screenOrientation
+     ="landscape" no Manifest) - por isso o layout é horizontal (hero à
+     esquerda, formulário à direita), não empilhado verticalmente. Em
+     paisagem a altura disponível é curta (tipicamente ~360-420dp numa tela
+     de celular), então empilhar tudo verticalmente não caberia sem rolar;
+     usando a largura extra que a orientação já dá, tudo cabe numa tela só. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/lumina_bg"
-    android:fillViewport="true">
+    android:orientation="horizontal">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/gmp_login_hero_bg"
-            android:clipChildren="false">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal"
-                android:paddingHorizontal="36dp"
-                android:paddingTop="52dp"
-                android:paddingBottom="30dp">
-
-                <FrameLayout
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:background="@drawable/gmp_logo_card_bg"
-                    android:layout_marginBottom="18dp"
-                    android:elevation="6dp">
-
-                    <ImageView
-                        android:layout_width="38dp"
-                        android:layout_height="38dp"
-                        android:layout_gravity="center"
-                        android:src="@drawable/gmp_symbol" />
-
-                </FrameLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="GMP GAMEPORT"
-                    android:textColor="@android:color/white"
-                    android:fontFamily="sans-serif-condensed"
-                    android:textStyle="bold"
-                    android:textSize="24sp"
-                    android:letterSpacing="0.02" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Seus jogos de PSP, sempre atualizados e prontos para jogar."
-                    android:textColor="#D9FFFFFF"
-                    android:textSize="13.5sp"
-                    android:gravity="center"
-                    android:lineSpacingExtra="3dp"
-                    android:maxWidth="280dp" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="22dp">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center_horizontal"
-                        android:layout_marginEnd="28dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="180+"
-                            android:textColor="@color/lumina_blue"
-                            android:textStyle="bold"
-                            android:textSize="18sp"
-                            android:fontFamily="sans-serif-condensed" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Patches"
-                            android:textColor="#B3FFFFFF"
-                            android:textSize="10.5sp" />
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center_horizontal">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="PSP"
-                            android:textColor="@color/lumina_blue"
-                            android:textStyle="bold"
-                            android:textSize="18sp"
-                            android:fontFamily="sans-serif-condensed" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="e PPSSPP"
-                            android:textColor="#B3FFFFFF"
-                            android:textSize="10.5sp" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-            </LinearLayout>
-        </FrameLayout>
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.42"
+        android:background="@drawable/gmp_login_hero_bg">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:orientation="vertical"
-            android:background="@drawable/gmp_login_form_bg"
-            android:layout_marginHorizontal="18dp"
-            android:layout_marginTop="-22dp"
-            android:layout_marginBottom="28dp"
-            android:elevation="4dp"
-            android:paddingHorizontal="22dp"
-            android:paddingTop="26dp"
-            android:paddingBottom="26dp">
+            android:gravity="center_horizontal"
+            android:paddingHorizontal="24dp">
+
+            <FrameLayout
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/gmp_logo_card_bg"
+                android:layout_marginBottom="14dp"
+                android:elevation="6dp">
+
+                <ImageView
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    android:src="@drawable/gmp_symbol" />
+
+            </FrameLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Bem-vindo de volta"
-                android:textColor="@color/lumina_text"
-                android:textSize="22sp"
+                android:text="GMP GAMEPORT"
+                android:textColor="@android:color/white"
                 android:fontFamily="sans-serif-condensed"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="24dp"
-                android:text="Entre na sua conta para acessar sua biblioteca."
-                android:textColor="@color/lumina_muted"
-                android:textSize="13.5sp" />
+                android:textStyle="bold"
+                android:textSize="19sp"
+                android:letterSpacing="0.02"
+                android:gravity="center" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Nome"
-                android:textColor="@color/lumina_text"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginTop="6dp"
+                android:text="Seus jogos de PSP, sempre prontos para jogar."
+                android:textColor="#D9FFFFFF"
+                android:textSize="12sp"
+                android:gravity="center"
+                android:maxWidth="220dp" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="18dp">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:layout_marginEnd="22dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="180+"
+                        android:textColor="@color/lumina_blue"
+                        android:textStyle="bold"
+                        android:textSize="16sp"
+                        android:fontFamily="sans-serif-condensed" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Patches"
+                        android:textColor="#B3FFFFFF"
+                        android:textSize="10sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="PSP"
+                        android:textColor="@color/lumina_blue"
+                        android:textStyle="bold"
+                        android:textSize="16sp"
+                        android:fontFamily="sans-serif-condensed" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="e PPSSPP"
+                        android:textColor="#B3FFFFFF"
+                        android:textSize="10sp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="0.58"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="32dp"
+        android:paddingVertical="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Bem-vindo de volta"
+            android:textColor="@color/lumina_text"
+            android:textSize="20sp"
+            android:fontFamily="sans-serif-condensed"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="14dp"
+            android:text="Entre na sua conta para acessar sua biblioteca."
+            android:textColor="@color/lumina_muted"
+            android:textSize="12.5sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
             <EditText
                 android:id="@+id/name_field"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:hint="Como podemos te chamar?"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:hint="Nome"
                 android:inputType="textPersonName|textCapWords"
                 android:textColor="@color/lumina_text"
                 android:textColorHint="@color/lumina_muted"
                 android:background="@drawable/gmp_input_bg"
-                android:paddingHorizontal="16dp"
-                android:textSize="15sp"
-                android:layout_marginBottom="18dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="E-mail"
-                android:textColor="@color/lumina_text"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
+                android:paddingHorizontal="14dp"
+                android:textSize="14sp" />
 
             <EditText
                 android:id="@+id/email_field"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:hint="seuemail@gmail.com"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_weight="1"
+                android:hint="E-mail"
                 android:inputType="textEmailAddress"
                 android:textColor="@color/lumina_text"
                 android:textColorHint="@color/lumina_muted"
                 android:background="@drawable/gmp_input_bg"
-                android:paddingHorizontal="16dp"
-                android:textSize="15sp"
-                android:layout_marginBottom="18dp" />
+                android:paddingHorizontal="14dp"
+                android:textSize="14sp" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
+        </LinearLayout>
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Senha"
-                    android:textColor="@color/lumina_text"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+        <EditText
+            android:id="@+id/password_field"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_marginTop="10dp"
+            android:hint="Senha"
+            android:inputType="textPassword"
+            android:textColor="@color/lumina_text"
+            android:textColorHint="@color/lumina_muted"
+            android:background="@drawable/gmp_input_bg"
+            android:paddingHorizontal="14dp"
+            android:textSize="14sp" />
 
-                <TextView
-                    android:id="@+id/forgot_password_link"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Esqueceu a senha?"
-                    android:textColor="@color/lumina_blue"
-                    android:textSize="12.5sp" />
-
-            </LinearLayout>
-
-            <EditText
-                android:id="@+id/password_field"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:hint="Digite sua senha"
-                android:inputType="textPassword"
-                android:textColor="@color/lumina_text"
-                android:textColorHint="@color/lumina_muted"
-                android:background="@drawable/gmp_input_bg"
-                android:paddingHorizontal="16dp"
-                android:textSize="15sp"
-                android:layout_marginBottom="16dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="6dp">
 
             <CheckBox
                 android:id="@+id/stay_logged_in_checkbox"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="Permanecer conectado"
                 android:textColor="@color/lumina_muted"
-                android:textSize="13.5sp"
-                android:checked="true"
-                android:layout_marginBottom="22dp" />
+                android:textSize="12.5sp"
+                android:checked="true" />
 
             <TextView
-                android:id="@+id/login_error_text"
-                android:layout_width="match_parent"
+                android:id="@+id/forgot_password_link"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/lumina_error"
-                android:textSize="13sp"
-                android:visibility="gone"
-                android:layout_marginBottom="12dp" />
+                android:text="Esqueceu a senha?"
+                android:textColor="@color/lumina_blue"
+                android:textSize="12sp"
+                android:padding="4dp" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/login_error_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/lumina_error"
+            android:textSize="12sp"
+            android:visibility="gone"
+            android:layout_marginTop="4dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="14dp">
 
             <ProgressBar
                 android:id="@+id/login_progress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
                 android:visibility="gone"
-                android:layout_marginBottom="12dp" />
+                android:layout_marginEnd="12dp" />
 
             <Button
                 android:id="@+id/login_button"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_width="0dp"
+                android:layout_height="46dp"
+                android:layout_weight="1"
                 android:text="Entrar"
                 android:textAllCaps="false"
                 android:textStyle="bold"
-                android:textSize="15.5sp"
+                android:textSize="14.5sp"
                 android:textColor="@color/lumina_on_accent"
                 android:background="@drawable/gmp_button_primary_bg"
                 android:elevation="2dp" />
@@ -281,4 +262,5 @@
         </LinearLayout>
 
     </LinearLayout>
-</ScrollView>
+
+</LinearLayout>

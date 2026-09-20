@@ -410,8 +410,10 @@ void EmuScreen::bootComplete() {
 		// normal 5 slots, so restore it instead of (not in addition to) the
 		// normal AutoLoadSaveState() config. A manual reset (bootIsReset_)
 		// intentionally skips both, same as upstream already did for AutoLoadSaveState().
+		// Also respects the on/off toggle: if the user disabled the feature,
+		// don't auto-load a leftover autosave from when it was still enabled.
 		std::string gamePrefix = SaveState::GetGamePrefix(g_paramSFO);
-		if (SaveState::HasSaveInSlot(gamePrefix, GMP_BACKGROUND_AUTOSAVE_SLOT)) {
+		if (g_Config.bGMPBackgroundAutoSaveEnabled && SaveState::HasSaveInSlot(gamePrefix, GMP_BACKGROUND_AUTOSAVE_SLOT)) {
 			AutoLoadBackgroundSaveIfPresent();
 		} else {
 			// Don't auto-load savestates in hardcore mode.
@@ -2110,6 +2112,10 @@ void EmuScreen::AutoLoadSaveState() {
 // safe -- it produces its own uniquely-named file, nothing more.
 
 void EmuScreen::AutoSaveOnBackground() {
+	// GMP Gameport: respeita o toggle de Configurações (ligado por padrão).
+	if (!g_Config.bGMPBackgroundAutoSaveEnabled) {
+		return;
+	}
 	// Only makes sense once a game has actually finished booting -- if we get
 	// backgrounded while still on the boot screen, there's nothing loaded yet
 	// to save, and g_paramSFO/gamePrefix wouldn't be ready anyway.
@@ -2160,6 +2166,19 @@ void EmuScreen::AutoLoadBackgroundSaveIfPresent() {
 		}
 		SaveState::DeleteSlot(gamePrefix, GMP_BACKGROUND_AUTOSAVE_SLOT);
 	});
+}
+
+void EmuScreen::DeleteBackgroundAutoSave() {
+	// Same slot/prefix logic as AutoSaveOnBackground and
+	// AutoLoadBackgroundSaveIfPresent above -- static so the Settings screen
+	// can call it without needing to reach into the running EmuScreen instance.
+	if (!PSP_IsInited()) {
+		return;
+	}
+	std::string gamePrefix = SaveState::GetGamePrefix(g_paramSFO);
+	if (SaveState::HasSaveInSlot(gamePrefix, GMP_BACKGROUND_AUTOSAVE_SLOT)) {
+		SaveState::DeleteSlot(gamePrefix, GMP_BACKGROUND_AUTOSAVE_SLOT);
+	}
 }
 
 void EmuScreen::resized() {

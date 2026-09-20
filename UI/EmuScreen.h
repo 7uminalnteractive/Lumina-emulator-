@@ -75,6 +75,14 @@ public:
 	// booted (no-op in that case).
 	void AutoSaveOnBackground();
 
+	// GMP Gameport: deletes the current game's dedicated background autosave
+	// slot, if any. Static (no EmuScreen instance needed) so it's callable
+	// from the Settings screen's "delete last autosave" button, which only
+	// makes sense while a game is running (accessed via the pause menu) --
+	// see GameSettingsScreen.cpp. Uses g_paramSFO for the current game, same
+	// as AutoSaveOnBackground/AutoLoadBackgroundSaveIfPresent do.
+	static void DeleteBackgroundAutoSave();
+
 protected:
 	void darken();
 	void focusChanged(ScreenFocusChange focusChange) override;

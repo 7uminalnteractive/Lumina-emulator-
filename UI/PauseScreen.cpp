@@ -273,7 +273,12 @@ SaveSlotView::SaveSlotView(std::string_view saveStatePrefix, int slot, UI::Layou
 
 	// GMP Gameport: o card inteiro é a miniatura (estilo capa de jogo do
 	// PS5), em vez de um thumbnail pequeno ao lado de uma coluna de texto.
-	AsyncImageFileView *fv = Add(new AsyncImageFileView(screenshotFilename_, IS_DEFAULT, new AnchorLayoutParams(FILL_PARENT, FILL_PARENT, 0, 0, 0, 0)));
+	// Dimensões absolutas (280x170) em vez de FILL_PARENT: como o próprio
+	// card também tem tamanho fixo (ver LinearLayoutParams(280, 170, ...) em
+	// CreateSavestateControls), FILL_PARENT aqui criava uma dependência
+	// circular de medida dentro do ScrollView horizontal que colapsava o
+	// card e sobrepunha o texto -- por isso os valores absolutos.
+	AsyncImageFileView *fv = Add(new AsyncImageFileView(screenshotFilename_, IS_DEFAULT, new AnchorLayoutParams(280, 170, 0, 0, NONE, NONE)));
 
 	auto pa = GetI18NCategory(I18NCat::PAUSE);
 	auto sy = GetI18NCategory(I18NCat::SYSTEM);
@@ -282,7 +287,7 @@ SaveSlotView::SaveSlotView(std::string_view saveStatePrefix, int slot, UI::Layou
 	// imagem) na árvore, então é desenhado por cima da miniatura e por baixo
 	// do conteúdo da faixa inferior -- exatamente a ordem de camadas que dá
 	// o efeito do card do PS5.
-	Add(new ScrimView(0xD0000000, new AnchorLayoutParams(FILL_PARENT, 78, 0, NONE, 0, 0)));
+	Add(new ScrimView(0xD0000000, new AnchorLayoutParams(280, 78, 0, NONE, NONE, 0)));
 
 	// TEMP HACK: use some other view, like a Choice, themed differently to enable keyboard access to selection.
 	ClickableTextView *numberView = Add(new ClickableTextView(number, new AnchorLayoutParams(WRAP_CONTENT, WRAP_CONTENT, 10, 8, NONE, NONE)));
@@ -300,7 +305,7 @@ SaveSlotView::SaveSlotView(std::string_view saveStatePrefix, int slot, UI::Layou
 
 	// GMP Gameport: faixa inferior sobreposta (data + botões), como os
 	// cards de save do PS5 -- em vez de uma coluna de texto ao lado.
-	LinearLayout *bottomBar = Add(new LinearLayout(ORIENT_VERTICAL, new AnchorLayoutParams(FILL_PARENT, WRAP_CONTENT, 0, NONE, 0, 0)));
+	LinearLayout *bottomBar = Add(new LinearLayout(ORIENT_VERTICAL, new AnchorLayoutParams(280, WRAP_CONTENT, 0, NONE, NONE, 0)));
 	bottomBar->SetSpacing(4.0f);
 
 	LinearLayout *buttons = new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT, Margins(8, 6, 8, 2)));
@@ -419,6 +424,16 @@ GamePauseScreen::~GamePauseScreen() {
 	__DisplaySetWasPaused();
 }
 
+void GamePauseScreen::DrawBackground(UIContext &ui) {
+	// GMP Gameport: com isTransparent() retornando true (ver PauseScreen.h),
+	// o ScreenManager continua desenhando a EmuScreen (o jogo pausado) por
+	// trás desta tela. Aqui só precisamos de um véu escuro translúcido por
+	// cima dele -- o suficiente para o menu continuar legível -- em vez do
+	// preto sólido opaco que aparecia antes (que, na real, nem era um fundo
+	// desenhado: era simplesmente o jogo não sendo renderizado).
+	ui.FillRect(UI::Drawable(0xB0000000), ui.GetBounds());
+}
+
 void GamePauseScreen::OnVKey(VirtKey virtualKeyCode, bool down) {
 	// Simple de-bounce using createdTime_, just to be safe.
 	if (down && virtualKeyCode == VIRTKEY_PAUSE && time_now_d() > createdTime_ + 0.1) {
@@ -448,7 +463,7 @@ void GamePauseScreen::CreateSavestateControls(UI::LinearLayout *leftColumnItems,
 	slotRow->SetSpacing(12.0f);
 
 	for (int i = 0; i < g_Config.iSaveStateSlotCount; i++) {
-		SaveSlotView *slot = slotRow->Add(new SaveSlotView(saveStatePrefix_, i, new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT, Gravity::G_TOPLEFT, Margins(0,0,0,0))));
+		SaveSlotView *slot = slotRow->Add(new SaveSlotView(saveStatePrefix_, i, new LinearLayoutParams(280, 170, Gravity::G_TOPLEFT, Margins(0,0,0,0))));
 		slot->OnStateLoaded.Handle(this, &GamePauseScreen::OnState);
 		slot->OnStateSaved.Handle(this, &GamePauseScreen::OnState);
 		slot->OnLoadRequested.Add([this](UI::EventParams &e) {
@@ -534,10 +549,7 @@ UI::Margins GamePauseScreen::RootMargins() const {
 void GamePauseScreen::CreateViews() {
 	using namespace UI;
 
-	bool portrait = GetDeviceOrientation() == DeviceOrientation::Portrait;
-
 	Margins scrollMargins(0, 10, 0, 0);
-	Margins actionMenuMargins(0, 10, 15, 0);
 	auto gr = GetI18NCategory(I18NCat::GRAPHICS);
 	auto pa = GetI18NCategory(I18NCat::PAUSE);
 	auto ac = GetI18NCategory(I18NCat::ACHIEVEMENTS);
@@ -545,14 +557,17 @@ void GamePauseScreen::CreateViews() {
 	auto di = GetI18NCategory(I18NCat::DIALOG);
 	auto co = GetI18NCategory(I18NCat::CONTROLS);
 
-	root_ = new LinearLayout(portrait ? ORIENT_VERTICAL : ORIENT_HORIZONTAL);
+	// GMP Gameport: layout sempre vertical (barra de botões embaixo, estilo
+	// PS5), independente da orientação do aparelho -- antes, só o modo
+	// retrato tinha os botões embaixo; paisagem colocava numa coluna lateral
+	// de 320px, que é o que o usuário via ao jogar com o celular deitado.
+	root_ = new LinearLayout(ORIENT_VERTICAL);
+	((LinearLayout *)root_)->SetSpacing(0);
 
-	if (portrait) {
-		((LinearLayout *)root_)->SetSpacing(0);
-	}
-
-	if (portrait) {
-		// We have room for a title bar in portrait mode. Use the game DB title if available.
+	// GMP Gameport: sempre mostra a barra de título (antes só no modo
+	// retrato) -- como o layout agora é sempre vertical, sempre há o mesmo
+	// espaço que o modo retrato já tinha para ela.
+	{
 		std::string title;
 		std::vector<GameDBInfo> dbInfos;
 		const bool inGameDB = g_gameDB.GetGameInfos(g_paramSFO.GetDiscID(), &dbInfos);
@@ -564,9 +579,9 @@ void GamePauseScreen::CreateViews() {
 		TopBar *topBar = new TopBar(*screenManager()->getUIContext(), TopBarFlags::ContextMenuButton, title);
 		root_->Add(topBar);
 
-		topBar->OnContextMenuClick.Add([this, portrait](UI::EventParams &e) {
+		topBar->OnContextMenuClick.Add([this](UI::EventParams &e) {
 			UI::View *srcView = e.v;
-			ShowContextMenu(srcView, portrait);
+			ShowContextMenu(srcView);
 		});
 	}
 
@@ -680,24 +695,14 @@ void GamePauseScreen::CreateViews() {
 		}
 	}
 
-	LinearLayout *middleColumn = nullptr;
-	ViewGroup *buttonColumn = nullptr;
-	if (portrait) {
-		buttonColumn = new LinearLayout(ORIENT_VERTICAL, new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT));
+	// GMP Gameport: sempre a barra de botões embaixo (como já era só no modo
+	// retrato) -- em vez de alternar para a coluna lateral de 320px que
+	// existia no modo paisagem.
+	LinearLayout *middleColumn = new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(FILL_PARENT, ITEM_HEIGHT, Margins(10, 10, 10, 10)));
+	root_->Add(middleColumn);
 
-		middleColumn = new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(FILL_PARENT, ITEM_HEIGHT, Margins(10, 10, 10, 10)));
-		root_->Add(middleColumn);
-		root_->Add(buttonColumn);
-	} else {
-		middleColumn = new LinearLayout(ORIENT_VERTICAL, new LinearLayoutParams(ITEM_HEIGHT, FILL_PARENT, Margins(0, 10, 0, 15)));
-		root_->Add(middleColumn);
-		middleColumn->SetSpacing(0.0f);
-
-		ViewGroup *buttonColumnScroll = new ScrollView(ORIENT_VERTICAL, new LinearLayoutParams(320, FILL_PARENT, actionMenuMargins));
-		buttonColumn = new LinearLayout(ORIENT_VERTICAL, new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT));
-		buttonColumnScroll->Add(buttonColumn);
-		root_->Add(buttonColumnScroll);
-	}
+	ViewGroup *buttonColumn = new LinearLayout(ORIENT_VERTICAL, new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT));
+	root_->Add(buttonColumn);
 
 	LinearLayout *rightColumnItems = new LinearLayout(ORIENT_VERTICAL);
 	buttonColumn->Add(rightColumnItems);
@@ -709,12 +714,10 @@ void GamePauseScreen::CreateViews() {
 		});
 	}
 
-	if (!portrait) {
-		Choice *continueChoice = rightColumnItems->Add(new Choice(pa->T("Continue"), ImageID("I_PLAY")));
-		root_->SetDefaultFocusView(continueChoice);
-		continueChoice->OnClick.Handle<UIScreen>(this, &UIScreen::OnBack);
-		rightColumnItems->Add(new Spacer(20.0));
-	}
+	// GMP Gameport: o "Continuar" agora sempre vem do exitRow mais abaixo
+	// (que também é sempre usado, ver a mudança em root_ acima) -- este
+	// segundo "Continuar" era exclusivo do modo paisagem antigo e ficaria
+	// duplicado se mantido.
 
 	if (g_paramSFO.IsValid() && g_Config.HasGameConfig(g_paramSFO.GetDiscID())) {
 		rightColumnItems->Add(new Choice(pa->T("Game Settings"), ImageID("I_GEAR")))->OnClick.Handle(this, &GamePauseScreen::OnGameSettings);
@@ -752,11 +755,8 @@ void GamePauseScreen::CreateViews() {
 		});
 	}
 
-	// TODO, also might be nice to show overall compat rating here?
-	// Based on their platform or even cpu/gpu/config.  Would add an API for it.
-	if (!portrait) {
-		AddExtraOptions(rightColumnItems);
-	}
+	// GMP Gameport: sempre mostra as opções extras (antes só em paisagem).
+	AddExtraOptions(rightColumnItems);
 	rightColumnItems->Add(new Spacer(20.0));
 	Choice *exit;
 	if (g_Config.bPauseMenuExitsEmulator) {
@@ -766,25 +766,24 @@ void GamePauseScreen::CreateViews() {
 		exit = new Choice(pa->T("Exit to menu"), ImageID("I_EXIT"));
 	}
 
-	if (portrait) {
-		UI::LinearLayout *exitRow = new UI::LinearLayout(ORIENT_HORIZONTAL, new UI::LinearLayoutParams(FILL_PARENT, WRAP_CONTENT, Margins(0, 0, 0, 0)));
-		rightColumnItems->Add(exitRow);
-		exitRow->Add(exit);
-		exit->ReplaceLayoutParams(new UI::LinearLayoutParams(1.0f, Gravity::G_VCENTER));
-		Choice *continueChoice = new Choice(pa->T("Continue"), ImageID("I_PLAY"));
-		continueChoice->OnClick.Handle<UIScreen>(this, &UIScreen::OnBack);
-		root_->SetDefaultFocusView(continueChoice);
-		exitRow->Add(continueChoice);
-		continueChoice->ReplaceLayoutParams(new UI::LinearLayoutParams(1.0f, Gravity::G_VCENTER));
-	} else {
-		rightColumnItems->Add(exit);
-	}
+	// GMP Gameport: sempre a linha "Sair" + "Continuar" lado a lado embaixo
+	// (antes exclusiva do modo retrato; paisagem só tinha "Sair" sozinho, já
+	// que "Continuar" vinha de outro lugar removido acima).
+	UI::LinearLayout *exitRow = new UI::LinearLayout(ORIENT_HORIZONTAL, new UI::LinearLayoutParams(FILL_PARENT, WRAP_CONTENT, Margins(0, 0, 0, 0)));
+	rightColumnItems->Add(exitRow);
+	exitRow->Add(exit);
+	exit->ReplaceLayoutParams(new UI::LinearLayoutParams(1.0f, Gravity::G_VCENTER));
+	Choice *continueChoice = new Choice(pa->T("Continue"), ImageID("I_PLAY"));
+	continueChoice->OnClick.Handle<UIScreen>(this, &UIScreen::OnBack);
+	root_->SetDefaultFocusView(continueChoice);
+	exitRow->Add(continueChoice);
+	continueChoice->ReplaceLayoutParams(new UI::LinearLayoutParams(1.0f, Gravity::G_VCENTER));
 
 	exit->OnClick.Handle(this, &GamePauseScreen::OnExit);
 	exit->SetEnabled(!bootPending_);
 
 	if (middleColumn) {
-		middleColumn->SetSpacing(portrait ? 8.0f : 0.0f);
+		middleColumn->SetSpacing(8.0f);
 		playButton_ = middleColumn->Add(new Choice(g_Config.bRunBehindPauseMenu ? ImageID("I_PAUSE_LINE") : ImageID("I_PLAY_LINE"), new LinearLayoutParams(64, 64)));
 		playButton_->OnClick.Add([this](UI::EventParams &e) {
 			g_Config.bRunBehindPauseMenu = !g_Config.bRunBehindPauseMenu;
@@ -793,10 +792,6 @@ void GamePauseScreen::CreateViews() {
 
 		bool mustRunBehind = MustRunBehind();
 		playButton_->SetEnabled(!mustRunBehind);
-
-		if (!portrait) {
-			middleColumn->Add(new Spacer(20.0f));
-		}
 
 		Choice *infoButton = middleColumn->Add(new Choice(ImageID("I_INFO"), new LinearLayoutParams(64, 64)));
 		infoButton->OnClick.Add([this](UI::EventParams &e) {
@@ -807,20 +802,21 @@ void GamePauseScreen::CreateViews() {
 			AddRotationPicker(screenManager(), middleColumn, false);
 		}
 
-		if (!portrait) {
-			Choice *menuButton = middleColumn->Add(new Choice("", ImageID("I_THREE_DOTS"), new LinearLayoutParams(64, 64)));
-			menuButton->OnClick.Add([this, menuButton, portrait](UI::EventParams &e) {
-				ShowContextMenu(menuButton, portrait);
-			});
-		}
+		// GMP Gameport: sempre mostra o botão de três pontos (antes só em
+		// paisagem) -- agora que o layout é sempre o mesmo, não faz sentido
+		// esse menu sumir dependendo da orientação do aparelho.
+		Choice *menuButton = middleColumn->Add(new Choice("", ImageID("I_THREE_DOTS"), new LinearLayoutParams(64, 64)));
+		menuButton->OnClick.Add([this, menuButton](UI::EventParams &e) {
+			ShowContextMenu(menuButton);
+		});
 	} else {
 		playButton_ = nullptr;
 	}
 }
 
-void GamePauseScreen::ShowContextMenu(UI::View *menuButton, bool portrait) {
+void GamePauseScreen::ShowContextMenu(UI::View *menuButton) {
 	using namespace UI;
-	PopupCallbackScreen *contextMenu = new UI::PopupCallbackScreen([this, portrait](UI::ViewGroup *parent) {
+	PopupCallbackScreen *contextMenu = new UI::PopupCallbackScreen([this](UI::ViewGroup *parent) {
 		auto di = GetI18NCategory(I18NCat::DIALOG);
 		parent->Add(new Choice(di->T("Reset"), ImageID("I_WARNING")))->OnClick.Add([this](UI::EventParams &e) {
 			std::string confirmMessage = GetConfirmExitMessage();
@@ -845,9 +841,10 @@ void GamePauseScreen::ShowContextMenu(UI::View *menuButton, bool portrait) {
 		parent->Add(new Choice(dev->T("DevMenu"), ImageID("I_DEBUGGER")))->OnClick.Add([this](UI::EventParams &e) {
 			screenManager()->push(new DevMenuScreen(gamePath_, I18NCat::DEVELOPER));
 		});
-		if (portrait) {
-			AddExtraOptions(parent);
-		}
+		// GMP Gameport: AddExtraOptions() já é sempre exibida diretamente na
+		// coluna de ações principal agora (era exclusiva do modo paisagem
+		// antes) -- chamá-la aqui de novo duplicaria essas opções dentro do
+		// menu de três pontos.
 	}, menuButton);
 	screenManager()->push(contextMenu);
 }
