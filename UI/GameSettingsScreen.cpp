@@ -1395,7 +1395,7 @@ void GameSettingsScreen::CreateSystemSettings(UI::ViewGroup *systemSettings) {
 	systemSettings->Add(new SettingHint(sy->T("Automatically saves your progress when you minimize the app, so it can be restored if Android closes it in the background"), nullptr));
 
 	Choice *deleteAutoSave = systemSettings->Add(new Choice(sy->T("Delete last auto save")));
-	deleteAutoSave->OnClick.Add([this](UI::EventParams &e) {
+	deleteAutoSave->OnClick.Add([this, sy, di](UI::EventParams &e) {
 		screenManager()->push(new PromptScreen(gamePath_, sy->T("Delete this game's auto save?"), di->T("Yes"), di->T("No"), [](bool result) {
 			if (result) {
 				EmuScreen::DeleteBackgroundAutoSave();
