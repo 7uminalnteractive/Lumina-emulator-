@@ -56,6 +56,14 @@ protected:
 	void CreateTabs() override;
 	bool ShowSearchControls() const override { return true; }
 
+	// GMP Gameport: o app agora roda sempre em paisagem (ver
+	// AndroidManifest.xml), e o layout padrão de UITabbedBaseDialogScreen
+	// para paisagem é abas na lateral esquerda (vertical). O usuário quer
+	// as abas sempre no topo (horizontal), como nas referências visuais --
+	// este é exatamente o gancho que TabbedDialogScreen.cpp já expõe para
+	// isso, sem precisar mexer na lógica genérica de portrait/paisagem.
+	bool ForceHorizontalTabs() const override { return true; }
+
 private:
 	void PreCreateViews() override;
 

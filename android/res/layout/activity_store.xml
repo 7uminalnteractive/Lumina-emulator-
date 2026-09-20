@@ -42,12 +42,10 @@
 
             <LinearLayout
                 android:id="@+id/tab_store"
-                android:layout_width="wrap_content"
+                android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:minWidth="48dp"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:paddingHorizontal="14dp"
                 android:background="@drawable/gmp_nav_item_selected"
                 android:layout_marginBottom="12dp">
 
@@ -57,15 +55,6 @@
                     android:text="▤"
                     android:textColor="@color/lumina_on_accent"
                     android:textSize="19sp" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="Loja"
-                    android:textColor="@color/lumina_on_accent"
-                    android:textStyle="bold"
-                    android:textSize="13sp" />
 
             </LinearLayout>
 

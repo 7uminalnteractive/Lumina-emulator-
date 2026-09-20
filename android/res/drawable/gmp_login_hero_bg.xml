@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- GMP Gameport: o glow verde agora é um gradiente radial sobre um
+     retângulo (sem contorno visível de círculo) em vez de um oval de
+     640dp bem definido - que ficava parecendo uma "bola" sobre o hero,
+     em vez de uma luz suave e orgânica. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
@@ -11,16 +15,14 @@
         </shape>
     </item>
     <item>
-        <shape android:shape="oval">
+        <shape android:shape="rectangle">
             <gradient
                 android:type="radial"
-                android:gradientRadius="420dp"
-                android:startColor="#3D9AE637"
+                android:gradientRadius="340dp"
+                android:centerX="0.5"
+                android:centerY="0.32"
+                android:startColor="#339AE637"
                 android:endColor="#009AE637" />
-            <size android:width="640dp" android:height="640dp" />
         </shape>
-        <inset
-            android:insetLeft="-260dp"
-            android:insetTop="-320dp" />
     </item>
 </layer-list>

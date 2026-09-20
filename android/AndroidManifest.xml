@@ -94,6 +94,7 @@
             android:name=".PpssppActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|locale|keyboard|keyboardHidden|navigation|uiMode"
             android:theme="@style/ppsspp_style"
+            android:screenOrientation="landscape"
 			android:launchMode="singleInstance"
             android:exported="true">
             <property android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY" android:value="true" />

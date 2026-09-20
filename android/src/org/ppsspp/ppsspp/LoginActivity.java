@@ -7,7 +7,6 @@ import android.text.TextUtils;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -21,7 +20,6 @@ public class LoginActivity extends Activity {
     private EditText nameField;
     private EditText emailField;
     private EditText passwordField;
-    private CheckBox stayLoggedInCheckbox;
     private Button loginButton;
     private ProgressBar progressBar;
     private TextView errorText;
@@ -50,7 +48,6 @@ public class LoginActivity extends Activity {
         nameField = findViewById(R.id.name_field);
         emailField = findViewById(R.id.email_field);
         passwordField = findViewById(R.id.password_field);
-        stayLoggedInCheckbox = findViewById(R.id.stay_logged_in_checkbox);
         loginButton = findViewById(R.id.login_button);
         progressBar = findViewById(R.id.login_progress);
         errorText = findViewById(R.id.login_error_text);

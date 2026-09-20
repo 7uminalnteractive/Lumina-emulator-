@@ -116,7 +116,12 @@ void SetMemStickDirDarwin(int requesterToken) {
 bool g_luminaCloseAppOnSettingsExit = false;
 
 GameSettingsScreen::GameSettingsScreen(const Path &gamePath, std::string gameID, bool editThenRestore)
-	: UITabbedBaseDialogScreen(gamePath, &g_Config.iSettingsCurrentTab, TabDialogFlags::HorizontalOnlyIcons | TabDialogFlags::VerticalShowIcons), gameID_(gameID), editGameSpecificThenRestore_(editThenRestore) {
+	// GMP Gameport: removida a flag HorizontalOnlyIcons -- com
+	// ForceHorizontalTabs() sempre ativo (ver GameSettingsScreen.h), as abas
+	// ficam sempre no modo horizontal, e o usuário quer o texto de cada aba
+	// visível ao lado do ícone (como nas referências visuais), não só o
+	// ícone sozinho.
+	: UITabbedBaseDialogScreen(gamePath, &g_Config.iSettingsCurrentTab, TabDialogFlags::VerticalShowIcons), gameID_(gameID), editGameSpecificThenRestore_(editThenRestore) {
 	prevInflightFrames_ = g_Config.iInflightFrames;
 	analogSpeedMapped_ = KeyMap::InputMappingsFromPspButton(VIRTKEY_SPEED_ANALOG, nullptr, true);
 
