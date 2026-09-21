@@ -1,55 +1,63 @@
-# GMP Gameport — Round 6 + correção das abas (consolidado)
+# GMP Gameport — Hash próprio para substituição de texturas
 
-Este zip junta as duas entregas anteriores num só. Extraia por cima da raiz
-do repositório e commite — `UI/GameSettingsScreen.cpp`/`.h` já estão no
-estado final (round 6 seguido da correção), sem precisar aplicar as duas
-entregas em sequência.
+Este zip contém **apenas os arquivos alterados**. Extraia por cima da raiz
+do repositório e commite.
 
-## Paisagem sempre ativa
+## O que foi feito
 
-`android/AndroidManifest.xml`: `PpssppActivity` (jogo, pause, Configurações)
-agora tem `android:screenOrientation="landscape"` fixo, igual às outras
-Activities do app. Antes seguia a rotação dinâmica do sistema. Você
-confirmou que aceita desativar a rotação automática por jogo.
+Adicionado um quarto algoritmo de hash de textura, próprio do GMP,
+selecionável em qualquer pack de texturas com `hash = gmp` no
+`textures.ini` dele — ao lado dos três que já existiam (`quick`, `xxh32`,
+`xxh64`), que continuam funcionando exatamente como antes.
 
-## Configurações: abas no topo, com ícone + texto
+### Exemplo real do hash
 
-- `UI/GameSettingsScreen.h`: `ForceHorizontalTabs() { return true; }` — faz
-  as abas ficarem sempre no topo (horizontal), em vez de irem para uma
-  coluna lateral esquerda, que seria o padrão do motor agora que o app é
-  sempre paisagem.
-- `UI/GameSettingsScreen.cpp`: os 6 ícones das abas (Gráficos, Controles,
-  Áudio, Rede, Ferramentas, Sistema) foram mantidos — numa tentativa
-  anterior eu tinha removido por engano, já corrigido. Também removida a
-  flag `TabDialogFlags::HorizontalOnlyIcons`, que fazia o modo horizontal
-  mostrar só ícone sem texto (comportamento original do PPSSPP) — agora
-  ícone e nome aparecem juntos em cada aba, como nas referências visuais.
+```
+input="abc"                              → hash=146d555f
+input="PSP texture data example bytes"   → hash=8b29aaf0
+input="" (vazio)                          → hash=474d5001
+```
 
-## Navbar sem texto em nenhum item
+Nome de arquivo final (mesmo formato que já existia, só o hash muda):
 
-`android/res/layout/activity_library.xml` e `activity_store.xml`: toda a
-sidebar (Biblioteca e Loja) é só ícones, sem texto nem no item ativo —
-resolve o "Jogos"/"Loja" que quebrava linha dentro do círculo.
+```
+000000001234567802a6a117.png       ← textura normal
+000000001234567802a6a117_1.png     ← mipmap nível 1
+```
 
-## Login: sem a "bola" e sem o checkbox
+Os 16 primeiros dígitos vêm do endereço/dimensões da textura (isso não
+muda); os últimos 8 dígitos são o hash em si — é aí que o GMP muda de
+valor comparado a `quick`/`xxh32`/`xxh64` para o mesmo conteúdo.
 
-- `android/res/drawable/gmp_login_hero_bg.xml`: o glow verde era um `oval`
-  bem definido (parecia uma bola sólida); trocado por um gradiente radial
-  sobre retângulo, sem silhueta de círculo visível.
-- `android/res/layout/activity_login.xml` e
-  `android/src/.../LoginActivity.java`: removido o checkbox "Permanecer
-  conectado" — ele nunca influenciava nada de verdade no código (o valor
-  nunca era lido), então o login já sempre "permanecia conectado" por
-  padrão; só a UI enganosa foi removida (campo, `findViewById` e import
-  correspondentes limpos no Java).
+## Como funciona por baixo
 
-Os 7 IDs que `LoginActivity.java` usa (`name_field`, `email_field`,
-`password_field`, `login_button`, `login_error_text`, `login_progress`,
-`forgot_password_link`) foram conferidos e continuam batendo entre XML e
-Java.
+- `GPU/Common/TextureDecoder.h`/`.cpp`: nova função `GMPStableTexHash`,
+  usando FNV-1a de 32 bits com uma seed própria (`0x474D5001`, "GMP" em
+  hex + versão). Sem SIMD/otimização por plataforma como o `QUICK`
+  existente — mais simples e sem risco de bug específico de arquitetura
+  que eu não teria como testar.
+- `GPU/Common/ReplacedTexture.h`: novo valor `ReplacedTextureHash::GMP` no
+  enum.
+- `GPU/Common/TextureReplacer.cpp`: reconhece `hash = gmp` no parsing do
+  `.ini`, e usa o novo algoritmo nos dois pontos onde o hash é calculado
+  (textura com dados contíguos na memória, e textura com "gaps" — os dois
+  precisavam do novo `case`, não só um). O `.ini` gerado automaticamente
+  quando alguém cria uma pasta de texturas nova continua com `quick` como
+  padrão; só o comentário foi atualizado para mencionar a nova opção.
 
-## Não testado por compilação real
+## Limitação importante (já confirmada com você)
 
-Revisão manual feita (balanceamento de chaves/parênteses em todos os
-arquivos, IDs conferidos, visibilidade de métodos `protected` conferida),
-mas não compilado de fato aqui — o `build.yml` no Actions valida isso.
+Isso **não** é compatível com nenhum pack de texturas já existente na
+internet (todos usam `quick`/`xxh32`/`xxh64`, feitos para o PPSSPP
+padrão). Só packs **novos**, criados deliberadamente com `hash = gmp`,
+vão usar o algoritmo do GMP — e esses packs não funcionariam em nenhum
+outro fork do PPSSPP, só no GMP Gameport.
+
+## Não testado por compilação real do projeto
+
+O algoritmo em si eu compilei e rodei isoladamente (fora do projeto) para
+confirmar que os hashes de exemplo acima são reais, não inventados. A
+integração com o resto do `TextureReplacer.cpp` foi revisada manualmente
+(balanceamento de chaves/parênteses, os dois `switch` corrigidos), mas não
+compilada dentro do projeto completo — o `build.yml` no Actions valida
+isso.

@@ -304,6 +304,9 @@ bool TextureReplacer::LoadIniValues(IniFile &ini, VFSBackend *dir, bool isOverri
 		textureHash_ = ReplacedTextureHash::XXH32;
 	} else if (strcasecmp(hash.c_str(), "xxh64") == 0) {
 		textureHash_ = ReplacedTextureHash::XXH64;
+	} else if (strcasecmp(hash.c_str(), "gmp") == 0) {
+		// GMP Gameport: hash próprio, ver GMPStableTexHash em TextureDecoder.cpp.
+		textureHash_ = ReplacedTextureHash::GMP;
 	} else if (!isOverride || !hash.empty()) {
 		*error = "textures.ini: Unsupported hash type: " + hash;
 		return false;
@@ -559,6 +562,8 @@ u32 TextureReplacer::ComputeHash(u32 addr, int bufw, int w, int h, bool swizzled
 			return XXH32(checkp, sizeInRAM, 0xBACD7814);
 		case ReplacedTextureHash::XXH64:
 			return XXH64(checkp, sizeInRAM, 0xBACD7814);
+		case ReplacedTextureHash::GMP:
+			return GMPStableTexHash(checkp, sizeInRAM);
 		default:
 			return 0;
 		}
@@ -588,6 +593,14 @@ u32 TextureReplacer::ComputeHash(u32 addr, int bufw, int w, int h, bool swizzled
 		case ReplacedTextureHash::XXH64:
 			for (int y = 0; y < h; ++y) {
 				u32 rowHash = XXH64(checkp, bytesPerLine, 0xBACD7814);
+				result = (result * 11) ^ rowHash;
+				checkp += stride;
+			}
+			break;
+
+		case ReplacedTextureHash::GMP:
+			for (int y = 0; y < h; ++y) {
+				u32 rowHash = GMPStableTexHash(checkp, bytesPerLine);
 				result = (result * 11) ^ rowHash;
 				checkp += stride;
 			}
@@ -1048,7 +1061,7 @@ bool TextureReplacer::GenerateIni(const std::string &gameID, Path &generatedFile
 
 [options]
 version = 1
-hash = quick             # options available: "quick", "xxh32" - more accurate, but slower, "xxh64" - more accurate and quite fast, but slower than xxh32 on 32 bit cpu's
+hash = quick             # options available: "quick", "xxh32" - more accurate, but slower, "xxh64" - more accurate and quite fast, but slower than xxh32 on 32 bit cpu's, "gmp" - GMP Gameport's own hash algorithm
 ignoreMipmap = true      # Usually, can just generate them with basisu, no need to dump.
 reduceHash = false       # Unsafe and can cause glitches in some cases, but allows to skip garbage data in some textures reducing endless duplicates as a side effect speeds up hashing as well, requires stronger hash like xxh32 or xxh64
 ignoreAddress = false    # Reduces duplicates at the cost of making hash less reliable, requires stronger hash like xxh32 or xxh64. Basically automatically sets the address to 0 in the dumped filenames.

@@ -33,6 +33,11 @@ enum class ReplacedTextureHash {
 	QUICK,
 	XXH32,
 	XXH64,
+	// GMP Gameport: hash próprio (ver GMPStableTexHash em TextureDecoder.cpp),
+	// selecionável com "hash = gmp" no textures.ini de um pack. Os três
+	// hashes acima continuam existindo e funcionando exatamente como antes
+	// -- esta é só uma opção a mais, não uma substituição.
+	GMP,
 };
 
 enum class ReplacedImageType {
