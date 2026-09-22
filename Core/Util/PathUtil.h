@@ -18,6 +18,10 @@ enum PSPDirectories {
 	DIRECTORY_SAVESTATE,
 	DIRECTORY_CACHE,
 	DIRECTORY_TEXTURES,
+	// GMP Gameport: centralized location for textures.ini files, separate
+	// from DIRECTORY_TEXTURES (which keeps holding each pack's images).
+	// See GPU/Common/TextureReplacer.cpp.
+	DIRECTORY_TEXTURE_INIS,
 	DIRECTORY_PLUGINS,
 	DIRECTORY_APP_CACHE,  // Use the OS app cache if available
 	DIRECTORY_VIDEO,

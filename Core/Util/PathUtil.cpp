@@ -82,6 +82,12 @@ Path GetSysDirectory(PSPDirectories directoryType) {
 		return pspDirectory / "Sistema/SYSTEM/CACHE";
 	case DIRECTORY_TEXTURES:
 		return pspDirectory / "Textura";
+	case DIRECTORY_TEXTURE_INIS:
+		// GMP Gameport: textures.ini files live here, separate from the
+		// pack images themselves (which stay in DIRECTORY_TEXTURES above).
+		// ".TEXTURES" (uppercase, leading dot) stays hidden in most file
+		// managers, per explicit request.
+		return pspDirectory / "Sistema/.TEXTURES";
 	case DIRECTORY_PLUGINS:
 		return pspDirectory / "Sistema/PLUGINS";
 	case DIRECTORY_APP_CACHE:
@@ -131,6 +137,7 @@ bool CreateSysDirectories() {
 		DIRECTORY_GAME,
 		DIRECTORY_SYSTEM,
 		DIRECTORY_TEXTURES,
+		DIRECTORY_TEXTURE_INIS,
 		DIRECTORY_PLUGINS,
 		DIRECTORY_CACHE,
 	};

@@ -108,6 +108,34 @@ Path DirectoryFileHandle::GetLocalPath(const Path &basePath, std::string_view lo
 		}
 	}
 
+	// GMP Gameport: redirect the game's fixed "PSP/SAVEDATA/..." save path
+	// (see savePath in Core/Dialog/SavedataParam.cpp) to the reorganized
+	// "Jogo/Save/..." location on disk. See the flag's declaration in
+	// FileSystem.h for why this can't just be handled by renaming a string
+	// upstream -- the PSP save path itself is fixed by the platform.
+	//
+	// The target must match what GetSysDirectory(DIRECTORY_SAVEDATA) in
+	// Core/Util/PathUtil.cpp actually resolves to: when STRIP_PSP is also
+	// set, basePath here IS already the GMP folder (that's exactly what
+	// STRIP_PSP means -- see its own comment above), so "Jogo/Save" is
+	// correct as-is. Otherwise basePath is the raw storage root, and the
+	// redirect needs the "GMP/" prefix too, or saves would land next to
+	// the GMP folder instead of inside it.
+	//
+	// redirectedPath must outlive the basePath / localPath usage below, since
+	// localPath (a string_view) is made to point into it -- assigning a
+	// temporary std::string directly to a string_view would dangle.
+	std::string redirectedPath;
+	if (fileSystemFlags_ & FileSystemFlags::REDIRECT_PSP_SAVEDATA) {
+		constexpr size_t kPrefixLen = 12; // strlen("PSP/SAVEDATA")
+		if (startsWithNoCase(localPath, "PSP/SAVEDATA") &&
+			(localPath.size() == kPrefixLen || localPath[kPrefixLen] == '/')) {
+			std::string_view prefix = (fileSystemFlags_ & FileSystemFlags::STRIP_PSP) ? "Jogo/Save" : "GMP/Jogo/Save";
+			redirectedPath = std::string(prefix) + std::string(localPath.substr(kPrefixLen));
+			localPath = redirectedPath;
+		}
+	}
+
 	return basePath / localPath;
 }
 
@@ -124,6 +152,20 @@ Path DirectoryFileSystem::GetLocalPath(std::string_view internalPath) const {
 			internalPath = "/";
 		} else if (startsWithNoCase(internalPath, "GMP/")) {
 			internalPath = internalPath.substr(4);
+		}
+	}
+
+	// GMP Gameport: see the matching block in DirectoryFileHandle::GetLocalPath
+	// above, and the flag's declaration in FileSystem.h, for why this exists,
+	// and why the target depends on whether STRIP_PSP is also set.
+	std::string redirectedPath;
+	if (flags & FileSystemFlags::REDIRECT_PSP_SAVEDATA) {
+		constexpr size_t kPrefixLen = 12; // strlen("PSP/SAVEDATA")
+		if (startsWithNoCase(internalPath, "PSP/SAVEDATA") &&
+			(internalPath.size() == kPrefixLen || internalPath[kPrefixLen] == '/')) {
+			std::string_view prefix = (flags & FileSystemFlags::STRIP_PSP) ? "Jogo/Save" : "GMP/Jogo/Save";
+			redirectedPath = std::string(prefix) + std::string(internalPath.substr(kPrefixLen));
+			internalPath = redirectedPath;
 		}
 	}
 

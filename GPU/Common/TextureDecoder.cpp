@@ -324,25 +324,6 @@ u32 StableQuickTexHash(const void *checkp, u32 size) {
 #endif
 }
 
-// GMP Gameport: FNV-1a de 32 bits com a seed própria do GMP (em vez do
-// offset basis padrão da FNV) -- deliberadamente simples e sem SIMD, para
-// não introduzir bugs de plataforma que não podemos testar em todos os
-// dispositivos. O resultado é diferente do StableQuickTexHash/XXH32/XXH64
-// para o mesmo conteúdo, então packs de textura com "hash = gmp" no
-// textures.ini nunca colidem por acaso com hashes de outro algoritmo.
-u32 GMPStableTexHash(const void *checkp, u32 size) {
-	constexpr u32 kGMPSeed = 0x474D5001u; // "GMP" + versão 01, em ASCII/hex
-	constexpr u32 kFNVPrime = 0x01000193u;
-
-	const u8 *p = (const u8 *)checkp;
-	u32 hash = kGMPSeed;
-	for (u32 i = 0; i < size; i++) {
-		hash ^= p[i];
-		hash *= kFNVPrime;
-	}
-	return hash;
-}
-
 void DoSwizzleTex16(const u32 *ysrcp, u8 *texptr, int bxc, int byc, u32 pitch) {
 	// ysrcp is in 32-bits, so this is convenient.
 	const u32 pitchBy32 = pitch >> 2;

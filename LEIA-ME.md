@@ -1,63 +1,80 @@
-# GMP Gameport — Hash próprio para substituição de texturas
+# GMP Gameport — Reversão do hash, save path, textures.ini central, idioma
 
-Este zip contém **apenas os arquivos alterados**. Extraia por cima da raiz
-do repositório e commite.
+Este zip contém **todos os arquivos alterados** nesta sessão. Extraia por
+cima da raiz do repositório e commite.
 
-## O que foi feito
+## 1. Hash de textura GMP revertido
 
-Adicionado um quarto algoritmo de hash de textura, próprio do GMP,
-selecionável em qualquer pack de texturas com `hash = gmp` no
-`textures.ini` dele — ao lado dos três que já existiam (`quick`, `xxh32`,
-`xxh64`), que continuam funcionando exatamente como antes.
+Reversão completa (nenhum vestígio de "gmp" restou):
+- `GPU/Common/TextureDecoder.h`/`.cpp` — removida a função `GMPStableTexHash`.
+- `GPU/Common/ReplacedTexture.h` — removido `ReplacedTextureHash::GMP` do enum.
+- `GPU/Common/TextureReplacer.cpp` — removido o parsing de `hash = gmp`, os
+  dois `case` correspondentes, e o comentário do `.ini` gerado
+  automaticamente voltou ao original.
 
-### Exemplo real do hash
+Volta ao comportamento 100% padrão do PPSSPP: só `quick`, `xxh32`, `xxh64`.
 
-```
-input="abc"                              → hash=146d555f
-input="PSP texture data example bytes"   → hash=8b29aaf0
-input="" (vazio)                          → hash=474d5001
-```
+## 2. Save path corrigido: agora vai de verdade para Jogo/Save
 
-Nome de arquivo final (mesmo formato que já existia, só o hash muda):
+**Descoberta:** o código já tinha uma reorganização parcial de pastas
+(`GetSysDirectory(DIRECTORY_SAVEDATA)` já retornava `GMP/Jogo/Save`), mas o
+sistema de arquivos virtual do PSP que todo jogo usa
+(`ms0:/PSP/SAVEDATA/...`, fixo no próprio hardware/API do PSP — não é algo
+que dá para renomear sem quebrar o jogo) nunca respeitava essa
+reorganização, então os saves continuavam caindo fisicamente em
+`PSP/SAVEDATA/` no disco.
 
-```
-000000001234567802a6a117.png       ← textura normal
-000000001234567802a6a117_1.png     ← mipmap nível 1
-```
+- `Core/FileSystems/FileSystem.h` — nova flag `REDIRECT_PSP_SAVEDATA`.
+- `Core/FileSystems/DirectoryFileSystem.cpp` — os dois métodos
+  `GetLocalPath` agora interceptam qualquer caminho começando com
+  `PSP/SAVEDATA` e redirecionam para `Jogo/Save` (ou `GMP/Jogo/Save`,
+  dependendo se a raiz de armazenamento escolhida já é a própria pasta
+  "GMP" ou não — a mesma lógica que a flag `STRIP_PSP` já usa).
+- `Core/HLE/sceIo.cpp` — a nova flag é ativada no mount do `ms0:`.
 
-Os 16 primeiros dígitos vêm do endereço/dimensões da textura (isso não
-muda); os últimos 8 dígitos são o hash em si — é aí que o GMP muda de
-valor comparado a `quick`/`xxh32`/`xxh64` para o mesmo conteúdo.
+Cobre tanto o fluxo normal de save/load do jogo (`SavedataParam.cpp`)
+quanto a instalação de dados de jogo (`PSPGamedataInstallDialog.cpp`) —
+ambos passam pela mesma camada de sistema de arquivos, então nenhum dos
+dois precisou ser editado diretamente.
 
-## Como funciona por baixo
+## 3. textures.ini agora fica em Sistema/.TEXTURES/
 
-- `GPU/Common/TextureDecoder.h`/`.cpp`: nova função `GMPStableTexHash`,
-  usando FNV-1a de 32 bits com uma seed própria (`0x474D5001`, "GMP" em
-  hex + versão). Sem SIMD/otimização por plataforma como o `QUICK`
-  existente — mais simples e sem risco de bug específico de arquitetura
-  que eu não teria como testar.
-- `GPU/Common/ReplacedTexture.h`: novo valor `ReplacedTextureHash::GMP` no
-  enum.
-- `GPU/Common/TextureReplacer.cpp`: reconhece `hash = gmp` no parsing do
-  `.ini`, e usa o novo algoritmo nos dois pontos onde o hash é calculado
-  (textura com dados contíguos na memória, e textura com "gaps" — os dois
-  precisavam do novo `case`, não só um). O `.ini` gerado automaticamente
-  quando alguém cria uma pasta de texturas nova continua com `quick` como
-  padrão; só o comentário foi atualizado para mencionar a nova opção.
+As imagens de cada pack continuam em `Textura/<jogo>/` como sempre. O
+arquivo `textures.ini` em si agora é lido de
+`GMP/Sistema/.TEXTURES/<jogo>/textures.ini` (pasta oculta, maiúscula,
+como pedido) — um lugar central, separado das imagens.
 
-## Limitação importante (já confirmada com você)
+- `Core/Util/PathUtil.h`/`.cpp` — novo `DIRECTORY_TEXTURE_INIS`,
+  resolvendo para `Sistema/.TEXTURES`; adicionado à lista de pastas
+  criadas automaticamente no primeiro boot.
+- `GPU/Common/TextureReplacer.cpp` — o carregamento do `.ini` agora usa
+  `IniFile::Load()` apontando para esse novo caminho central, em vez de
+  `LoadFromVFS` na própria pasta do pack. **Sem fallback** para o local
+  antigo, como você confirmou: se o `.ini` não estiver no novo lugar, o
+  app simplesmente não carrega nenhum `.ini` (mas ainda reconhece imagens
+  com nome de hash direto na pasta, se houver). Packs zipados (`.zip`)
+  continuam levando o `.ini` junto dentro do zip — não fazia sentido
+  separar isso nesse caso.
 
-Isso **não** é compatível com nenhum pack de texturas já existente na
-internet (todos usam `quick`/`xxh32`/`xxh64`, feitos para o PPSSPP
-padrão). Só packs **novos**, criados deliberadamente com `hash = gmp`,
-vão usar o algoritmo do GMP — e esses packs não funcionariam em nenhum
-outro fork do PPSSPP, só no GMP Gameport.
+**Para o pack KMPES que você mandou:** a pasta a criar seria
+`GMP/Sistema/.TEXTURES/<ID do jogo>/`, com o `textures.ini` (o mesmo que
+já revertemos para `hash = quick`) dentro dela; as imagens do pack
+continuam em `GMP/Textura/<ID do jogo>/` como já estavam.
 
-## Não testado por compilação real do projeto
+## 4. Idioma: Castellano (España) agora em português
 
-O algoritmo em si eu compilei e rodei isoladamente (fora do projeto) para
-confirmar que os hashes de exemplo acima são reais, não inventados. A
-integração com o resto do `TextureReplacer.cpp` foi revisada manualmente
-(balanceamento de chaves/parênteses, os dois `switch` corrigidos), mas não
-compilada dentro do projeto completo — o `build.yml` no Actions valida
-isso.
+- `assets/lang/es_ES.ini` — conteúdo substituído pelo de `pt_BR.ini`
+  (confirmei com diff que ficaram byte-a-byte idênticos). O nome exibido
+  na lista de seleção de idiomas continua "Castellano (España)" — isso
+  vem de um arquivo totalmente separado (`assets/langregion.ini`, não
+  incluído aqui porque não foi alterado), que não toquei.
+
+Resultado: o usuário seleciona "Castellano (España)" na lista (como já
+fazia) e todos os textos da interface aparecem em português.
+
+## Não testado por compilação real
+
+Revisão manual feita em tudo (balanceamento de chaves/parênteses,
+diff byte-a-byte do arquivo de idioma, verificação de fluxo completo do
+save através de duas classes diferentes), mas não compilado de fato aqui
+— o `build.yml` no Actions valida isso.

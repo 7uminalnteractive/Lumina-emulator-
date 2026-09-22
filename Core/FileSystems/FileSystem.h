@@ -79,6 +79,16 @@ enum class FileSystemFlags {
 	FLASH = 8,
 	STRIP_PSP = 16,
 	CASE_SENSITIVE = 32,
+	// GMP Gameport: games always ask for saves at the fixed virtual path
+	// "ms0:/PSP/SAVEDATA/..." (see savePath in Core/Dialog/SavedataParam.cpp
+	// and Core/Dialog/PSPGamedataInstallDialog.cpp -- that's the real PSP's
+	// hardcoded save location, not something we can change without breaking
+	// save compatibility). This flag makes the real save files land in the
+	// reorganized Jogo/Save folder (matching GetSysDirectory(DIRECTORY_SAVEDATA)
+	// in Core/Util/PathUtil.cpp) instead of literally creating PSP/SAVEDATA/
+	// on disk. Separate from STRIP_PSP, which solves a different problem
+	// (the memstick root itself being named "GMP").
+	REDIRECT_PSP_SAVEDATA = 64,
 };
 ENUM_CLASS_BITOPS(FileSystemFlags);
 

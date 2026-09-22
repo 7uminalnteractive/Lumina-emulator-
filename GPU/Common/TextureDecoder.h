@@ -32,17 +32,6 @@ void DoUnswizzleTex16(const u8 *texptr, u32 *ydestp, int bxc, int byc, u32 pitch
 
 u32 StableQuickTexHash(const void *checkp, u32 size);
 
-// GMP Gameport: hash próprio de 32 bits para o sistema de substituição de
-// texturas, selecionável no textures.ini de um pack com "hash = gmp" (ao
-// lado de "quick"/"xxh32"/"xxh64", que continuam existindo e funcionando
-// exatamente como antes -- este é só mais uma opção). Baseado em FNV-1a
-// (algoritmo simples, público e bem conhecido) com uma seed própria do
-// GMP, em vez de uma cópia de um dos três hashes que já existem. Não usa
-// SIMD/otimizações específicas de plataforma como QuickTexHash, então é o
-// mesmo código em qualquer arquitetura -- mais simples de manter, ao custo
-// de ser um pouco mais lento que a versão SSE2/NEON de QUICK.
-u32 GMPStableTexHash(const void *checkp, u32 size);
-
 // outMask is an in/out parameter.
 void CopyAndSumMask16(u16 *dst, const u16 *src, int width, u32 *outMask);
 void CopyAndSumMask32(u32 *dst, const u32 *src, int width, u32 *outMask);

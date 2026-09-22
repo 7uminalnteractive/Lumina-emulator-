@@ -664,6 +664,14 @@ void __IoInit() {
 		memstickFlags |= FileSystemFlags::STRIP_PSP;
 	}
 
+	// GMP Gameport: games always save to the fixed "ms0:/PSP/SAVEDATA/..."
+	// path (see savePath in Core/Dialog/SavedataParam.cpp) -- that's not
+	// something we can change without breaking save compatibility with the
+	// real PSP. This flag makes those saves actually land in the reorganized
+	// Jogo/Save folder on disk instead of literally creating PSP/SAVEDATA/,
+	// matching GetSysDirectory(DIRECTORY_SAVEDATA) in Core/Util/PathUtil.cpp.
+	memstickFlags |= FileSystemFlags::REDIRECT_PSP_SAVEDATA;
+
 	auto memstickSystem = std::make_shared<DirectoryFileSystem>(&pspFileSystem, g_Config.memStickDirectory, memstickFlags);
 
 	pspFileSystem.Mount("ms0:", memstickSystem);
