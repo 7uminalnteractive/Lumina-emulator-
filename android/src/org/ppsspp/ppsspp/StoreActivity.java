@@ -27,6 +27,8 @@ public class StoreActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_store);
+        GmpWindowHelper.apply(this, findViewById(R.id.store_root),
+                findViewById(R.id.sidebar), findViewById(R.id.main_content));
 
         accountStore = new AccountStore(this);
         profileAvatar = findViewById(R.id.profile_avatar);
@@ -52,6 +54,17 @@ public class StoreActivity extends AppCompatActivity {
         View profileTab = findViewById(R.id.tab_profile);
         profileTab.setOnClickListener(v ->
                 startActivity(new Intent(this, AccountActivity.class)));
+    }
+
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        // O Android mostra as barras de novo depois de diálogo/permissão/retorno
+        // do jogo; reaplica o modo imersivo para manter a tela cheia.
+        if (hasFocus) {
+            GmpWindowHelper.reapplyImmersive(this);
+        }
     }
 
     @Override

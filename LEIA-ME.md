@@ -1,80 +1,88 @@
-# GMP Gameport — Reversão do hash, save path, textures.ini central, idioma
+# GMP Gameport — Tela cheia, ICON0/PIC1, Castellano como ROM padrão
 
-Este zip contém **todos os arquivos alterados** nesta sessão. Extraia por
-cima da raiz do repositório e commite.
+Este zip contém **somente os arquivos alterados** nesta sessão. Extraia por
+cima da raiz do repositório e commite. (Só Android.)
 
-## 1. Hash de textura GMP revertido
+## 1. Tela cheia (sem o cinza) + ícone de perfil não corta mais
 
-Reversão completa (nenhum vestígio de "gmp" restou):
-- `GPU/Common/TextureDecoder.h`/`.cpp` — removida a função `GMPStableTexHash`.
-- `GPU/Common/ReplacedTexture.h` — removido `ReplacedTextureHash::GMP` do enum.
-- `GPU/Common/TextureReplacer.cpp` — removido o parsing de `hash = gmp`, os
-  dois `case` correspondentes, e o comentário do `.ini` gerado
-  automaticamente voltou ao original.
+**Causa:** o tema já pedia `windowLayoutInDisplayCutoutMode=shortEdges`, mas isso
+só *permite* desenhar sob o notch. As telas do launcher nunca pediram para
+desenhar por baixo das barras do sistema, então o Android deixava a faixa
+cinza do notch (esquerda) e a barra preta de gestos (embaixo) — e essa barra
+cobria o ícone de perfil, no fim da sidebar.
 
-Volta ao comportamento 100% padrão do PPSSPP: só `quick`, `xxh32`, `xxh64`.
+**Correção:**
+- `GmpWindowHelper.java` (NOVO) — estende a janela por baixo das barras, deixa
+  status/nav transparentes, desliga o "contrast enforcement" que recriava a
+  faixa escura, e liga o modo imersivo (as barras voltam com um swipe da borda).
+  Os insets viram **padding só na sidebar e no conteúdo**, então o *fundo* cobre
+  100% da tela mas nenhum ícone fica sob o notch ou o gesto.
+- Aplicado em: `LibraryActivity`, `StoreActivity` (com sidebar) e
+  `AccountActivity`, `LoginActivity`, `ProfileSelectorActivity` (fundo full-bleed).
+  Todas reaplicam o imersivo em `onWindowFocusChanged`, porque o Android mostra
+  as barras de novo depois de permissão/diálogo.
+- `activity_library.xml` / `activity_store.xml` — sidebar passou de `76dp` fixo
+  para `wrap_content` + `minWidth=76dp`, para crescer com o notch em vez de
+  espremer os ícones. IDs adicionados nas raízes.
 
-## 2. Save path corrigido: agora vai de verdade para Jogo/Save
+## 2. ICON0.png e PIC1.png reconhecidos
 
-**Descoberta:** o código já tinha uma reorganização parcial de pastas
-(`GetSysDirectory(DIRECTORY_SAVEDATA)` já retornava `GMP/Jogo/Save`), mas o
-sistema de arquivos virtual do PSP que todo jogo usa
-(`ms0:/PSP/SAVEDATA/...`, fixo no próprio hardware/API do PSP — não é algo
-que dá para renomear sem quebrar o jogo) nunca respeitava essa
-reorganização, então os saves continuavam caindo fisicamente em
-`PSP/SAVEDATA/` no disco.
+- `GameArtwork.java` (NOVO) — procura `ICON0` (card) e `PIC1` (banner) na pasta
+  do jogo e, se não achar, em `PSP_GAME/`. Ignora maiúsculas/minúsculas
+  (`ICON0.PNG` do PSP original vs `ICON0.png` do instalador — no Android são
+  arquivos diferentes). Aceita png/jpg/jpeg/webp.
+- `GameItem` — novo campo `backgroundUri` (PIC1). Construtor antigo mantido.
+- `LibraryActivity` — ICON0 tem prioridade sobre as capas soltas antigas
+  (`covers/`, `capas/`...), que continuam funcionando como fallback. PIC1 vai
+  para o banner "hero" do jogo em destaque.
+- `activity_library.xml` + `gmp_hero_scrim.xml` (NOVO) — `ImageView` do PIC1
+  atrás do texto, com camada escura para o título/botão ficarem legíveis.
+  Sem PIC1, o banner é o mesmo gradiente verde de antes.
 
-- `Core/FileSystems/FileSystem.h` — nova flag `REDIRECT_PSP_SAVEDATA`.
-- `Core/FileSystems/DirectoryFileSystem.cpp` — os dois métodos
-  `GetLocalPath` agora interceptam qualquer caminho começando com
-  `PSP/SAVEDATA` e redirecionam para `Jogo/Save` (ou `GMP/Jogo/Save`,
-  dependendo se a raiz de armazenamento escolhida já é a própria pasta
-  "GMP" ou não — a mesma lógica que a flag `STRIP_PSP` já usa).
-- `Core/HLE/sceIo.cpp` — a nova flag é ativada no mount do `ms0:`.
+## 3. Castellano como ROM padrão, interface continua pt-BR
 
-Cobre tanto o fluxo normal de save/load do jogo (`SavedataParam.cpp`)
-quanto a instalação de dados de jogo (`PSPGamedataInstallDialog.cpp`) —
-ambos passam pela mesma camada de sistema de arquivos, então nenhum dos
-dois precisou ser editado diretamente.
+São dois settings separados no PPSSPP, e antes ambos seguiam o português:
+- `sLanguageIni` = idioma da **interface** → agora fixo em `pt_BR` por padrão
+  (`DefaultLangRegion()`), em vez de seguir o idioma do sistema Android.
+- `iLanguage` (`GameLanguage`) = idioma que o **jogo** recebe do PSP → padrão
+  mudou de `-1` (Auto, seguia a interface = português) para
+  `PSP_SYSTEMPARAM_LANGUAGE_SPANISH`.
 
-## 3. textures.ini agora fica em Sistema/.TEXTURES/
+`Core/Config.cpp` é o único arquivo alterado. O `es_ES.ini` (que é cópia do
+`pt_BR.ini`, da sessão anterior) **não foi tocado**.
 
-As imagens de cada pack continuam em `Textura/<jogo>/` como sempre. O
-arquivo `textures.ini` em si agora é lido de
-`GMP/Sistema/.TEXTURES/<jogo>/textures.ini` (pasta oculta, maiúscula,
-como pedido) — um lugar central, separado das imagens.
+> **Atenção:** o padrão só vale onde a chave não existe. Quem já abriu o app
+> antes e tem `GameLanguage = -1` (ou `Language = en_US` etc.) no `ppsspp.ini`
+> continua com o valor antigo. Para testar, limpe os dados do app ou apague
+> essas duas linhas do `GMP/SYSTEM/ppsspp.ini`.
 
-- `Core/Util/PathUtil.h`/`.cpp` — novo `DIRECTORY_TEXTURE_INIS`,
-  resolvendo para `Sistema/.TEXTURES`; adicionado à lista de pastas
-  criadas automaticamente no primeiro boot.
-- `GPU/Common/TextureReplacer.cpp` — o carregamento do `.ini` agora usa
-  `IniFile::Load()` apontando para esse novo caminho central, em vez de
-  `LoadFromVFS` na própria pasta do pack. **Sem fallback** para o local
-  antigo, como você confirmou: se o `.ini` não estiver no novo lugar, o
-  app simplesmente não carrega nenhum `.ini` (mas ainda reconhece imagens
-  com nome de hash direto na pasta, se houver). Packs zipados (`.zip`)
-  continuam levando o `.ini` junto dentro do zip — não fazia sentido
-  separar isso nesse caso.
+## 4. Caminho do ICON0/PIC1 e formato .gmp (2ª rodada)
 
-**Para o pack KMPES que você mandou:** a pasta a criar seria
-`GMP/Sistema/.TEXTURES/<ID do jogo>/`, com o `textures.ini` (o mesmo que
-já revertemos para `hash = quick`) dentro dela; as imagens do pack
-continuam em `GMP/Textura/<ID do jogo>/` como já estavam.
+**Estrutura confirmada:** `Jogo/Game/<Jogo>/PSP_GAME/ICON0.png` e `PIC1.png`.
+- `GameArtwork` procura primeiro em `PSP_GAME/` e só depois na pasta do jogo.
+- Aceita "Psp Game", "psp-game", "PSP_GAME"... **apenas para achar as imagens**.
+- **Para listar como jogo a pasta tem que se chamar exatamente `PSP_GAME`.**
+  O núcleo (`Core/Loaders.cpp`, `System.cpp`) usa esse nome literal e o caminho
+  `disc0:/PSP_GAME/USRDIR` é fixo; uma pasta "Psp Game" apareceria na
+  Biblioteca mas não iniciaria. O instalador deve criar `PSP_GAME`.
 
-## 4. Idioma: Castellano (España) agora em português
+**`.gmp`:** o launcher agora lista `*.gmp`. Nenhuma mudança no núcleo foi
+necessária: `Identify_File` e `ConstructBlockDevice` decidem o formato pelo
+**cabeçalho do arquivo** (`PK`=ZIP, `CISO`, `CD001`=ISO), nunca pela extensão.
+Logo um `.gmp` que seja ISO, CSO ou ZIP-de-ISO renomeado já abre.
 
-- `assets/lang/es_ES.ini` — conteúdo substituído pelo de `pt_BR.ini`
-  (confirmei com diff que ficaram byte-a-byte idênticos). O nome exibido
-  na lista de seleção de idiomas continua "Castellano (España)" — isso
-  vem de um arquivo totalmente separado (`assets/langregion.ini`, não
-  incluído aqui porque não foi alterado), que não toquei.
-
-Resultado: o usuário seleciona "Castellano (España)" na lista (como já
-fazia) e todos os textos da interface aparecem em português.
+⚠ Limitações do `.gmp` como ZIP renomeado (medidas, não estimadas):
+- `ZipFileLoader` descomprime o ISO **inteiro para a RAM** (`malloc(dataFileSize_)`).
+  Um UMD de 1,1 GB exige ~1,1 GB de RAM livre; jogos de 1,8 GB tendem a fechar
+  o app em celulares com pouca memória. ISO/CSO renomeados não têm esse custo.
+- Só reconhece ZIP com **um** `.iso/.cso/.chd` na raiz ou 1 nível abaixo. Um zip
+  com a estrutura `PSP_GAME/...` (UMD extraído) **não** roda.
+- **Não impede distribuição:** renomear de volta para `.iso`/`.zip` restaura o
+  arquivo idêntico (testado com `cmp`). É só ofuscação de extensão.
 
 ## Não testado por compilação real
 
-Revisão manual feita em tudo (balanceamento de chaves/parênteses,
-diff byte-a-byte do arquivo de idioma, verificação de fluxo completo do
-save através de duas classes diferentes), mas não compilado de fato aqui
-— o `build.yml` no Actions valida isso.
+Sem Android SDK/`javac` aqui. Validei: XML de todos os layouts/drawables
+(parse OK), balanço de chaves/parênteses dos Java alterados, todos os
+`R.id.*` novos existem nos layouts, e `androidx.core` já é usado por
+`PpssppActivity`. O `build.yml` no Actions faz a compilação de verdade.

@@ -31,6 +31,7 @@ public class LoginActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        GmpWindowHelper.applyFullscreenOnly(this, findViewById(R.id.login_root));
 
         accountStore = new AccountStore(this);
         authClient = new AuthClient(accountStore);
@@ -56,6 +57,14 @@ public class LoginActivity extends Activity {
 
         TextView forgotPasswordLink = findViewById(R.id.forgot_password_link);
         forgotPasswordLink.setOnClickListener(v -> attemptPasswordReset());
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            GmpWindowHelper.reapplyImmersive(this);
+        }
     }
 
     private void attemptLogin() {

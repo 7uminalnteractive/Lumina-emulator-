@@ -96,6 +96,14 @@ GPUBackend GPUBackendFromString(std::string_view backend) {
 }
 
 std::string DefaultLangRegion() {
+	// GMP Gameport: a interface do app abre em português do Brasil por padrão,
+	// em vez de seguir o idioma do sistema Android. (O idioma do JOGO é um
+	// setting separado, GameLanguage, que por padrão é Castellano.)
+	// O usuário ainda pode trocar o idioma em Configurações > Sistema.
+	if (g_i18nrepo.IniExists("pt_BR")) {
+		return "pt_BR";
+	}
+
 	// Unfortunate default.  There's no need to use bFirstRun, since this is only a default.
 	static std::string defaultLangRegion = "en_US";
 	std::string langRegion = System_GetProperty(SYSPROP_LANGREGION);
@@ -1118,7 +1126,11 @@ static const ConfigSetting systemParamSettings[] = {
 	ConfigSetting("PSPFirmwareVersion", SETTING(g_Config, iFirmwareVersion), PSP_DEFAULT_FIRMWARE, CfgFlag::PER_GAME | CfgFlag::REPORT),
 	ConfigSetting("NickName", SETTING(g_Config, sNickName), "PPSSPP", CfgFlag::PER_GAME),
 	ConfigSetting("MacAddress", SETTING(g_Config, sMACAddress), "", CfgFlag::PER_GAME),
-	ConfigSetting("GameLanguage", SETTING(g_Config, iLanguage), -1, CfgFlag::PER_GAME | CfgFlag::REPORT),
+	// GMP Gameport: o idioma que o JOGO (a ROM) recebe do PSP é Castellano por padrão,
+	// independente do idioma da interface do app (sLanguageIni, que continua pt_BR).
+	// Antes era -1 ("Auto"), que fazia o jogo seguir o idioma da interface (português).
+	// O usuário ainda pode trocar em Configurações > Sistema > Idioma do jogo.
+	ConfigSetting("GameLanguage", SETTING(g_Config, iLanguage), PSP_SYSTEMPARAM_LANGUAGE_SPANISH, CfgFlag::PER_GAME | CfgFlag::REPORT),
 	ConfigSetting("ParamTimeFormat", SETTING(g_Config, iTimeFormat), PSP_SYSTEMPARAM_TIME_FORMAT_24HR, CfgFlag::PER_GAME),
 	ConfigSetting("ParamDateFormat", SETTING(g_Config, iDateFormat), PSP_SYSTEMPARAM_DATE_FORMAT_YYYYMMDD, CfgFlag::PER_GAME),
 	ConfigSetting("TimeZone", SETTING(g_Config, iTimeZone), 0, CfgFlag::PER_GAME),

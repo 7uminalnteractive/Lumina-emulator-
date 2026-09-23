@@ -6,6 +6,7 @@
      de celular), então empilhar tudo verticalmente não caberia sem rolar;
      usando a largura extra que a orientação já dá, tudo cabe numa tela só. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/login_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/lumina_bg"

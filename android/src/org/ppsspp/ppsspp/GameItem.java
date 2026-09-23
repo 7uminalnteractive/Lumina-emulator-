@@ -9,13 +9,21 @@ public class GameItem {
     public final long sizeBytes;
     public final String extension;
     public final Uri coverUri;
+    /** PIC1: imagem de fundo grande do jogo (banner "hero"). Pode ser null. */
+    public final Uri backgroundUri;
 
     public GameItem(String displayName, Uri contentUri, long sizeBytes, String extension, Uri coverUri) {
+        this(displayName, contentUri, sizeBytes, extension, coverUri, null);
+    }
+
+    public GameItem(String displayName, Uri contentUri, long sizeBytes, String extension,
+                    Uri coverUri, Uri backgroundUri) {
         this.displayName = displayName;
         this.contentUri = contentUri;
         this.sizeBytes = sizeBytes;
         this.extension = extension;
         this.coverUri = coverUri;
+        this.backgroundUri = backgroundUri;
     }
 
     public String getTitle() {

@@ -27,9 +27,18 @@ public class ProfileSelectorActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile_selector);
+        GmpWindowHelper.applyFullscreenOnly(this, findViewById(R.id.profile_selector_root));
 
         accountStore = new AccountStore(this);
         profilesRow = findViewById(R.id.profiles_row);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            GmpWindowHelper.reapplyImmersive(this);
+        }
     }
 
     @Override

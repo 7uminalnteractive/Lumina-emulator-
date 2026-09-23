@@ -17,6 +17,7 @@ public class AccountActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_account);
+        GmpWindowHelper.applyFullscreenOnly(this, findViewById(R.id.account_root));
 
         AccountStore accountStore = new AccountStore(this);
         LocalAccount active = accountStore.getActiveAccount();
@@ -48,5 +49,15 @@ public class AccountActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btn_back).setOnClickListener(v -> finish());
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        // O Android mostra as barras de novo depois de diálogo/permissão/retorno
+        // do jogo; reaplica o modo imersivo para manter a tela cheia.
+        if (hasFocus) {
+            GmpWindowHelper.reapplyImmersive(this);
+        }
     }
 }

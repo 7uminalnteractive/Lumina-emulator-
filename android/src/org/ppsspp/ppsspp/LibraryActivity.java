@@ -24,7 +24,10 @@ import java.util.Locale;
 public class LibraryActivity extends AppCompatActivity {
 
     private static final List<String> SUPPORTED_EXTENSIONS =
-            List.of("iso", "cso", "pbp", "chd", "elf");
+            // GMP Gameport: "gmp" é o contêiner próprio do GMP (ISO ou ZIP de UMD
+            // renomeado). O núcleo o identifica pelo CONTEÚDO, não pela extensão
+            // (Core/Loaders.cpp: bytes "PK" -> ZIP, "CD001" -> ISO), então basta listar.
+            List.of("iso", "cso", "pbp", "chd", "elf", "gmp");
     private static final List<String> IMAGE_EXTENSIONS =
             List.of("jpg", "jpeg", "png", "webp");
     private static final List<String> COVER_FOLDER_NAMES =
@@ -39,6 +42,8 @@ public class LibraryActivity extends AppCompatActivity {
     private TextView heroTitle;
     private TextView heroSubtitle;
     private View heroPlayButton;
+    private View heroBanner;
+    private android.widget.ImageView heroBackground;
     private TextView profileAvatar;
     private View profileStatusDot;
     private AccountStore accountStore;
@@ -47,6 +52,10 @@ public class LibraryActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_library);
+        // GMP Gameport: tela cheia de verdade (sem faixa cinza do notch) e
+        // sidebar com padding de inset, para o ícone de perfil não ser cortado.
+        GmpWindowHelper.apply(this, findViewById(R.id.library_root),
+                findViewById(R.id.sidebar), findViewById(R.id.main_content));
 
         recyclerView = findViewById(R.id.games_grid);
         emptyState = findViewById(R.id.empty_state);
@@ -56,6 +65,8 @@ public class LibraryActivity extends AppCompatActivity {
         heroTitle = findViewById(R.id.hero_title);
         heroSubtitle = findViewById(R.id.hero_subtitle);
         heroPlayButton = findViewById(R.id.hero_play_button);
+        heroBanner = findViewById(R.id.hero_banner);
+        heroBackground = findViewById(R.id.hero_background);
         profileAvatar = findViewById(R.id.profile_avatar);
         profileStatusDot = findViewById(R.id.profile_status_dot);
         accountStore = new AccountStore(this);
@@ -92,6 +103,17 @@ public class LibraryActivity extends AppCompatActivity {
 
         heroTitle.setText("Sua biblioteca");
         heroSubtitle.setText("Concedendo acesso, buscamos seus jogos automaticamente.");
+    }
+
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        // O Android mostra as barras de novo depois de diálogo/permissão/retorno
+        // do jogo; reaplica o modo imersivo para manter a tela cheia.
+        if (hasFocus) {
+            GmpWindowHelper.reapplyImmersive(this);
+        }
     }
 
     @Override
@@ -212,8 +234,16 @@ public class LibraryActivity extends AppCompatActivity {
                     // so these folders were silently skipped. Detect them here and treat the
                     // folder itself as the launchable game, without recursing further into it.
                     if (isExtractedUmdFolder(child)) {
-                        Uri cover = findCoverFor(folder, child.getName());
-                        out.add(new GameItem(child.getName(), Uri.fromFile(child), folderSizeBytes(child), "umd", cover));
+                        // GMP Gameport: ICON0.png (card) e PIC1.png (banner) vêm da
+                        // própria pasta do jogo. Se não existirem, cai para as capas
+                        // soltas que já eram suportadas (covers/, capas/, etc.).
+                        Uri cover = GameArtwork.findIcon(child);
+                        if (cover == null) {
+                            cover = findCoverFor(folder, child.getName());
+                        }
+                        Uri background = GameArtwork.findBackground(child);
+                        out.add(new GameItem(child.getName(), Uri.fromFile(child),
+                                folderSizeBytes(child), "umd", cover, background));
                         continue;
                     }
                     // Skip Android's own restricted directories to avoid SecurityExceptions
@@ -245,6 +275,11 @@ public class LibraryActivity extends AppCompatActivity {
      * layout PPSSPP's native loader already recognizes for an extracted UMD image.
      */
     private boolean isExtractedUmdFolder(File folder) {
+        // ATENÇÃO: aqui o nome TEM que ser exatamente "PSP_GAME". O núcleo nativo
+        // (Core/Loaders.cpp: File::Exists(filename / "PSP_GAME") e
+        // System.cpp: "disc0:/PSP_GAME/USRDIR") usa esse nome literal. Uma pasta
+        // "Psp Game" apareceria na Biblioteca mas NÃO iniciaria. A tolerância a
+        // "Psp Game" existe só em GameArtwork, para achar ICON0/PIC1.
         File direct = new File(folder, "PSP_GAME");
         if (direct.isDirectory()) {
             return true;
@@ -351,11 +386,38 @@ public class LibraryActivity extends AppCompatActivity {
                 ? "1 jogo na sua biblioteca"
                 : games.size() + " jogos na sua biblioteca");
 
+        bindHeroBackground(first);
+
         heroPlayButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, PpssppActivity.class);
             intent.setData(first.contentUri);
             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivity(intent);
         });
+    }
+    /**
+     * GMP Gameport: mostra o PIC1 do jogo em destaque como fundo do banner.
+     * Sem PIC1, o banner volta ao gradiente verde padrão (gmp_hero_bg).
+     * O gradiente escuro de baixo continua por cima (camada do próprio
+     * drawable), então o título/botão seguem legíveis sobre qualquer imagem.
+     */
+    private void bindHeroBackground(GameItem game) {
+        if (heroBackground == null) {
+            return;
+        }
+        if (game.backgroundUri == null) {
+            heroBackground.setVisibility(View.GONE);
+            heroBackground.setImageDrawable(null);
+            return;
+        }
+        heroBackground.setVisibility(View.VISIBLE);
+        float radiusPx = 20f * getResources().getDisplayMetrics().density;
+        com.bumptech.glide.Glide.with(this)
+                .load(game.backgroundUri)
+                .apply(com.bumptech.glide.request.RequestOptions.bitmapTransform(
+                        new com.bumptech.glide.load.MultiTransformation<>(
+                                new com.bumptech.glide.load.resource.bitmap.CenterCrop(),
+                                new com.bumptech.glide.load.resource.bitmap.RoundedCorners((int) radiusPx))))
+                .into(heroBackground);
     }
 }

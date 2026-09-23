@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/library_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/lumina_bg">
@@ -11,7 +12,9 @@
 
         <!-- Sidebar -->
         <LinearLayout
-            android:layout_width="76dp"
+            android:id="@+id/sidebar"
+            android:layout_width="wrap_content"
+            android:minWidth="76dp"
             android:layout_height="match_parent"
             android:background="@drawable/gmp_sidebar_bg"
             android:orientation="vertical"
@@ -119,6 +122,7 @@
 
         <!-- Main content -->
         <ScrollView
+            android:id="@+id/main_content"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -138,6 +142,21 @@
                     android:layout_margin="20dp"
                     android:layout_marginBottom="8dp"
                     android:background="@drawable/gmp_hero_bg">
+
+                    <!-- GMP Gameport: PIC1.png do jogo, quando existir. Fica atrás
+                         do texto e é escurecido pela camada abaixo. -->
+                    <ImageView
+                        android:id="@+id/hero_background"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:contentDescription="@null"
+                        android:visibility="gone" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/gmp_hero_scrim" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
