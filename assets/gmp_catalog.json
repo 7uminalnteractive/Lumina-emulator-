@@ -1,0 +1,28 @@
+{
+  "_aviso": "BANCO TEMPORARIO DE TESTE. Substituir pelo banco real (ver GmpCatalog.java). Este arquivo vai dentro do APK: qualquer pessoa consegue le-lo, entao NAO e protecao de nada.",
+
+  "games": [
+    {
+      "id": "the-best-conmebol",
+      "title": "The Best Conmebol",
+      "kind": "game",
+      "fileName": "The Best Conmebol.gmp",
+      "sizeBytes": 0,
+      "sha256": "",
+      "downloadUrl": "",
+      "unlockedByProducts": ["conmebol"],
+      "unlockedByPlans": ["*"]
+    }
+  ],
+
+  "users": [
+    { "email": "conmebol@teste.com", "products": ["conmebol"] },
+    { "email": "plano@teste.com", "plan": "premium" },
+    { "email": "semnada@teste.com" }
+  ],
+
+  "unknownUser": {
+    "_aviso": "Como o login ainda e simulado (aceita qualquer e-mail), quem nao esta em 'users' recebe isto para poder testar. REMOVER quando o login real entrar.",
+    "products": ["conmebol"]
+  }
+}

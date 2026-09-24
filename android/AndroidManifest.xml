@@ -81,6 +81,11 @@
             android:screenOrientation="landscape"
             android:exported="false" />
         <activity
+            android:name=".InstallerActivity"
+            android:theme="@style/ppsspp_style"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+        <activity
             android:name=".AccountActivity"
             android:theme="@style/ppsspp_style"
             android:screenOrientation="landscape"

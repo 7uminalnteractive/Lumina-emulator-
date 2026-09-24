@@ -214,6 +214,7 @@
                 </FrameLayout>
 
                 <LinearLayout
+                    android:id="@+id/installed_header"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -247,6 +248,45 @@
                     android:paddingHorizontal="12dp"
                     android:clipToPadding="false"
                     android:visibility="gone" />
+
+                <!-- GMP Gameport: jogos que o usuário tem direito a baixar (patch ou
+                     plano) e ainda não instalou. Tocar num card abre o Instalador. -->
+                <LinearLayout
+                    android:id="@+id/download_section"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="20dp"
+                        android:paddingTop="22dp"
+                        android:text="Disponíveis para baixar"
+                        android:textColor="@color/lumina_text"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/download_status"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="20dp"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/lumina_muted"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/download_grid"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:paddingHorizontal="12dp"
+                        android:clipToPadding="false"
+                        android:visibility="gone" />
+                </LinearLayout>
 
             </LinearLayout>
         </ScrollView>
