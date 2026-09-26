@@ -55,6 +55,9 @@ public class GameAdapter extends RecyclerView.Adapter<GameAdapter.GameViewHolder
             holder.cover.setBackground(null);
             Glide.with(holder.itemView.getContext())
                     .load(game.coverUri)
+                    // GMP Gameport: sem isso o Glide guarda o ICON0 antigo em cache
+                    // e ignora quando o arquivo é substituído no mesmo caminho.
+                    .signature(GlideFileSignature.forFileUri(game.coverUri))
                     .apply(RequestOptions.bitmapTransform(
                             new com.bumptech.glide.load.MultiTransformation<>(
                                     new CenterCrop(),

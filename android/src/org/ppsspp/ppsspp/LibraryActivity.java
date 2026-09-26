@@ -520,6 +520,10 @@ public class LibraryActivity extends AppCompatActivity {
         float radiusPx = 20f * getResources().getDisplayMetrics().density;
         com.bumptech.glide.Glide.with(this)
                 .load(game.backgroundUri)
+                // GMP Gameport: mesma correção do card (GameAdapter) -- sem a
+                // assinatura, o Glide reaproveita o PIC1 antigo em cache mesmo
+                // depois de o arquivo no disco ter sido trocado.
+                .signature(GlideFileSignature.forFileUri(game.backgroundUri))
                 .apply(com.bumptech.glide.request.RequestOptions.bitmapTransform(
                         new com.bumptech.glide.load.MultiTransformation<>(
                                 new com.bumptech.glide.load.resource.bitmap.CenterCrop(),
