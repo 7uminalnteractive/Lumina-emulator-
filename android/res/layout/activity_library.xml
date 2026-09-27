@@ -37,12 +37,12 @@
                 android:background="@drawable/gmp_nav_item_selected"
                 android:layout_marginBottom="12dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⌂"
-                    android:textColor="@color/lumina_on_accent"
-                    android:textSize="19sp" />
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_nav_home"
+                    android:tint="@color/lumina_on_accent"
+                    android:contentDescription="@null" />
 
             </LinearLayout>
 
@@ -54,12 +54,12 @@
                 android:gravity="center"
                 android:layout_marginBottom="12dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="▤"
-                    android:textColor="@color/lumina_muted"
-                    android:textSize="19sp" />
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_nav_download"
+                    android:tint="@color/lumina_muted"
+                    android:contentDescription="@null" />
 
             </LinearLayout>
 
@@ -71,12 +71,12 @@
                 android:gravity="center"
                 android:layout_marginBottom="12dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="⚙"
-                    android:textColor="@color/lumina_muted"
-                    android:textSize="19sp" />
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_nav_settings"
+                    android:tint="@color/lumina_muted"
+                    android:contentDescription="@null" />
 
             </LinearLayout>
 
