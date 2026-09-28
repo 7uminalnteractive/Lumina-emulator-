@@ -1808,6 +1808,14 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		} else if (command.equals("finish")) {
 			Log.i(TAG, "Setting shuttingDown = true and calling Finish");
 			shuttingDown = true;
+			// GMP Gameport: ao sair do jogo/emulador, volta para o início (Biblioteca).
+			try {
+				Intent library = new Intent(this, LibraryActivity.class);
+				library.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+				startActivity(library);
+			} catch (Exception e) {
+				Log.w(TAG, "Não foi possível voltar para a Biblioteca", e);
+			}
 			finish();
 			return true;
 		} else if (command.equals("rotate")) {

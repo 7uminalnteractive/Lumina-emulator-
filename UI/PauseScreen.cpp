@@ -370,6 +370,13 @@ void SaveSlotView::OnSaveState(UI::EventParams &e) {
 	}
 }
 
+// GMP Gameport: "Sair pro menu" fecha o emulador e volta para o início (Biblioteca,
+// LibraryActivity) em vez de cair no menu interno do PPSSPP. O PpssppActivity
+// trata o comando "finish" abrindo a Biblioteca.
+static bool GmpPauseMenuExitsToLibrary() {
+	return true;
+}
+
 void GamePauseScreen::update() {
 	UpdateUIState(UISTATE_PAUSEMENU);
 
@@ -758,13 +765,8 @@ void GamePauseScreen::CreateViews() {
 	// GMP Gameport: sempre mostra as opções extras (antes só em paisagem).
 	AddExtraOptions(rightColumnItems);
 	rightColumnItems->Add(new Spacer(20.0));
-	Choice *exit;
-	if (g_Config.bPauseMenuExitsEmulator) {
-		auto di = GetI18NCategory(I18NCat::DIALOG);
-		exit = new Choice(di->T("Exit"), ImageID("I_EXIT"));
-	} else {
-		exit = new Choice(pa->T("Exit to menu"), ImageID("I_EXIT"));
-	}
+	// Mantém o rótulo "Sair pro menu"; o comportamento (voltar ao início) está em OnExit.
+	Choice *exit = new Choice(pa->T("Exit to menu"), ImageID("I_EXIT"));
 
 	// GMP Gameport: sempre a linha "Sair" + "Continuar" lado a lado embaixo
 	// (antes exclusiva do modo retrato; paisagem só tinha "Sair" sozinho, já
@@ -943,7 +945,7 @@ void GamePauseScreen::OnExit(UI::EventParams &e) {
 		std::string_view title = di->T("Are you sure you want to exit?");
 		screenManager()->push(new UI::MessagePopupScreen(title, confirmExitMessage, di->T("Exit"), di->T("Cancel"), [this](bool result) {
 			if (result) {
-				if (g_Config.bPauseMenuExitsEmulator) {
+				if (GmpPauseMenuExitsToLibrary()) {
 					System_ExitApp();
 				} else {
 					std::lock_guard<std::mutex> lock(finishNextFrameMutex_);
@@ -953,7 +955,7 @@ void GamePauseScreen::OnExit(UI::EventParams &e) {
 			}
 		}));
 	} else {
-		if (g_Config.bPauseMenuExitsEmulator) {
+		if (GmpPauseMenuExitsToLibrary()) {
 			System_ExitApp();
 		} else {
 			TriggerFinish(DR_OK);

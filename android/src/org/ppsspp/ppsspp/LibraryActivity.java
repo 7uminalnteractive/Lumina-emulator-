@@ -47,14 +47,7 @@ public class LibraryActivity extends AppCompatActivity {
     private TextView profileAvatar;
     private View profileStatusDot;
     private AccountStore accountStore;
-
-    // GMP Gameport: seção "Disponíveis para baixar" (catálogo filtrado pelo acesso do usuário).
-    private View downloadSection;
-    private TextView downloadStatus;
-    private RecyclerView downloadGrid;
     private View installedHeader;
-    private List<CatalogGame> downloadable = new ArrayList<>();
-    private boolean downloadError = false;
     private boolean installedEmpty = false;
 
     @Override
@@ -79,9 +72,6 @@ public class LibraryActivity extends AppCompatActivity {
         profileAvatar = findViewById(R.id.profile_avatar);
         profileStatusDot = findViewById(R.id.profile_status_dot);
         accountStore = new AccountStore(this);
-        downloadSection = findViewById(R.id.download_section);
-        downloadStatus = findViewById(R.id.download_status);
-        downloadGrid = findViewById(R.id.download_grid);
         installedHeader = findViewById(R.id.installed_header);
 
         // GMP Gameport: grade vertical multi-coluna (como nas referências),
@@ -90,7 +80,6 @@ public class LibraryActivity extends AppCompatActivity {
         // tanto em celulares quanto em tablets, em vez de um valor fixo.
         int columnCount = calculateGridColumnCount();
         recyclerView.setLayoutManager(new GridLayoutManager(this, columnCount));
-        downloadGrid.setLayoutManager(new GridLayoutManager(this, columnCount));
 
         Button grantAccessButton = findViewById(R.id.btn_pick_folder);
         grantAccessButton.setOnClickListener(v -> requestStorageAccess());
@@ -136,10 +125,7 @@ public class LibraryActivity extends AppCompatActivity {
         ProfileBadgeHelper.bind(profileAvatar, profileStatusDot, accountStore.getActiveAccount());
         if (hasStorageAccess()) {
             scanGamesFolder();
-            loadDownloadableGames();
         } else {
-            downloadable = new ArrayList<>();
-            downloadError = false;
             showPickFolderState();
         }
     }
@@ -423,82 +409,15 @@ public class LibraryActivity extends AppCompatActivity {
         });
     }
     /**
-     * GMP Gameport: o aviso "Nenhum jogo encontrado" só aparece quando não há jogo
-     * instalado E nada para baixar. Nunca sobre a tela de "conceder acesso" nem
-     * durante o carregamento.
+     * GMP Gameport: o aviso "Nenhum jogo encontrado" só aparece quando não há
+     * jogo instalado. Nunca sobre a tela de "conceder acesso" nem durante o
+     * carregamento. (A seção "Disponíveis para baixar" saiu da Biblioteca e
+     * foi para a Loja -- ver StoreActivity.)
      */
     private void updateEmptyState() {
         boolean busy = progressBar.getVisibility() == View.VISIBLE
                 || pickFolderState.getVisibility() == View.VISIBLE;
-        boolean nothingToShow = installedEmpty && downloadable.isEmpty() && !downloadError;
-        emptyState.setVisibility(!busy && nothingToShow ? View.VISIBLE : View.GONE);
-    }
-
-    /**
-     * GMP Gameport: pergunta ao catálogo o que ESTE usuário pode baixar (patch
-     * comprado ou plano ativo) e mostra o que ainda não está instalado. Sem
-     * internet a Biblioteca continua funcionando com os jogos já instalados.
-     */
-    private void loadDownloadableGames() {
-        LocalAccount account = accountStore.getActiveAccount();
-        if (account == null || account.email == null) {
-            showDownloadable(new ArrayList<>(), false);
-            return;
-        }
-        final String email = account.email;
-        final File gameDir = gamesFolder();
-        final CatalogSource source = GmpCatalog.source(getApplicationContext());
-
-        new Thread(() -> {
-            List<CatalogGame> pending = new ArrayList<>();
-            boolean failed = false;
-            try {
-                for (CatalogGame game : source.fetchDownloadableGames(email)) {
-                    // Por ora a Biblioteca só lista jogos; outros tipos (textura, save...)
-                    // serão instalados junto do jogo/patch a que pertencem.
-                    if ("game".equals(game.kind) && !new File(gameDir, game.fileName).exists()) {
-                        pending.add(game);
-                    }
-                }
-            } catch (Exception e) {
-                android.util.Log.w("LibraryActivity", "Não foi possível consultar o catálogo", e);
-                failed = true;
-            }
-            final boolean finalFailed = failed;
-            runOnUiThread(() -> {
-                if (!isFinishing() && !isDestroyed()) {
-                    showDownloadable(pending, finalFailed);
-                }
-            });
-        }, "gmp-catalog").start();
-    }
-
-    private void showDownloadable(List<CatalogGame> games, boolean failed) {
-        downloadable = games;
-        downloadError = failed;
-
-        if (!games.isEmpty()) {
-            downloadSection.setVisibility(View.VISIBLE);
-            downloadStatus.setVisibility(View.GONE);
-            downloadGrid.setVisibility(View.VISIBLE);
-            downloadGrid.setAdapter(new DownloadAdapter(games, this::openInstaller));
-        } else if (failed) {
-            downloadSection.setVisibility(View.VISIBLE);
-            downloadGrid.setVisibility(View.GONE);
-            downloadStatus.setVisibility(View.VISIBLE);
-            downloadStatus.setText("Não foi possível verificar os jogos disponíveis. "
-                    + "Confira sua internet; seus jogos instalados continuam funcionando.");
-        } else {
-            downloadSection.setVisibility(View.GONE);
-        }
-        updateEmptyState();
-    }
-
-    private void openInstaller(CatalogGame game) {
-        Intent intent = new Intent(this, InstallerActivity.class);
-        intent.putExtra(InstallerActivity.EXTRA_GAME_ID, game.id);
-        intent.putExtra(InstallerActivity.EXTRA_GAME_TITLE, game.title);
-        startActivity(intent);
+        emptyState.setVisibility(!busy && installedEmpty ? View.VISIBLE : View.GONE);
     }
 
     /**
