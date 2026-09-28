@@ -275,6 +275,9 @@ void ChoiceStrip::AddChoice(std::string_view title, ImageID imageId) {
 		orientation_ == ORIENT_HORIZONTAL ?
 		nullptr :
 		new LinearLayoutParams(FILL_PARENT, ITEM_HEIGHT));
+	if (topTabs_) {
+		c->SetTabLook(true, orientation_ == ORIENT_VERTICAL);
+	}
 	c->OnClick.Handle(this, &ChoiceStrip::OnChoiceClick);
 	Add(c);
 	choices_.push_back(c);
@@ -287,6 +290,9 @@ void ChoiceStrip::AddChoice(ImageID buttonImage) {
 		orientation_ == ORIENT_HORIZONTAL ?
 		nullptr :
 		new LinearLayoutParams(FILL_PARENT, ITEM_HEIGHT));
+	if (topTabs_) {
+		c->SetTabLook(true, orientation_ == ORIENT_VERTICAL);
+	}
 	c->OnClick.Handle(this, &ChoiceStrip::OnChoiceClick);
 	Add(c);
 	choices_.push_back(c);

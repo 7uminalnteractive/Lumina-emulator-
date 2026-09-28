@@ -346,6 +346,54 @@ bool Clickable::Key(const KeyInput &key) {
 	return ret;
 }
 
+void StickyChoice::Draw(UIContext &dc) {
+	if (!tabLook_) {
+		Choice::Draw(dc);
+		return;
+	}
+
+	// GMP Gameport: visual de aba limpo. Foco por teclado/controle continua
+	// visível (estilo "focused" do tema) para não atrapalhar a navegação.
+	const bool selected = down_;
+	const Theme &theme = dc.GetTheme();
+
+	if (HasFocus()) {
+		Choice::Draw(dc);
+		return;
+	}
+
+	// Cor de destaque (lima do GMP) vem do estilo "down" do tema; texto ativo em
+	// cor cheia, inativo em cor apagada (mesma cor dos textos secundários).
+	const uint32_t accent = theme.itemDownStyle.background.color | 0xFF000000;
+	const uint32_t textActive = theme.itemStyle.fgColor;
+	const uint32_t textIdle = (theme.infoStyle.fgColor & 0x00FFFFFF) | 0xB0000000;
+	const uint32_t fg = selected ? textActive : textIdle;
+
+	if (tabVertical_ && selected) {
+		// Fundo suave + barra lateral de destaque (como o item "Settings" da referência).
+		dc.FillRect(Drawable((accent & 0x00FFFFFF) | 0x26000000), bounds_);
+		dc.FillRect(Drawable(accent), Bounds(bounds_.x, bounds_.y + 6.0f, 4.0f, bounds_.h - 12.0f));
+	}
+
+	if (image_.isValid() && text_.empty()) {
+		dc.Draw()->DrawImageRotated(image_, bounds_.centerX(), bounds_.centerY(), imgScale_, imgRot_, fg, imgFlipH_);
+	} else if (!text_.empty()) {
+		dc.SetFontStyle(theme.uiFont);
+		if (tabVertical_) {
+			Bounds tb(bounds_.x + 18.0f, bounds_.y, bounds_.w - 26.0f, bounds_.h);
+			dc.DrawTextRectSqueeze(text_, tb, fg, ALIGN_VCENTER | FLAG_WRAP_TEXT);
+		} else {
+			dc.DrawTextRectSqueeze(text_, bounds_, fg, ALIGN_CENTER | FLAG_WRAP_TEXT);
+		}
+		dc.SetFontScale(1.0f, 1.0f);
+	}
+
+	if (!tabVertical_ && selected) {
+		// Sublinhado da aba ativa.
+		dc.FillRect(Drawable(accent), Bounds(bounds_.x + 6.0f, bounds_.y2() - 4.0f, bounds_.w - 12.0f, 4.0f));
+	}
+}
+
 bool StickyChoice::Touch(const TouchInput &touch) {
 	bool contains = bounds_.Contains(touch.x, touch.y);
 	if (!IsEnabled()) {
@@ -609,7 +657,8 @@ ItemHeader::ItemHeader(std::string_view text, LayoutParams *layoutParams)
 }
 
 void ItemHeader::Draw(UIContext &dc) {
-	dc.SetFontStyle(large_ ? dc.GetTheme().uiFont : dc.GetTheme().uiFontSmall);
+	// GMP Gameport: títulos de seção maiores (como "Payment Method" na referência).
+	dc.SetFontStyle((large_ || !popupStyle_) ? dc.GetTheme().uiFont : dc.GetTheme().uiFontSmall);
 
 	const UI::Style &style = popupStyle_ ? dc.GetTheme().popupStyle : dc.GetTheme().headerStyle;
 	dc.FillRect(style.background, bounds_);

@@ -826,6 +826,15 @@ public:
 	bool Key(const KeyInput &key) override;
 	bool Touch(const TouchInput &touch) override;
 	void FocusChanged(FocusFlags focusFlags) override;
+	void Draw(UIContext &dc) override;
+
+	// GMP Gameport: estilo de aba "limpo" (como na referência de design): sem bloco
+	// preenchido; a aba ativa ganha um sublinhado (abas no topo) ou uma barra
+	// lateral + fundo suave (lista vertical), e as inativas ficam em cor apagada.
+	void SetTabLook(bool tabLook, bool vertical) {
+		tabLook_ = tabLook;
+		tabVertical_ = vertical;
+	}
 
 	void Press() { down_ = true; dragging_ = false;  }
 	void Release() { down_ = false; dragging_ = false; }
@@ -834,6 +843,10 @@ public:
 protected:
 	// hackery
 	bool IsSticky() const override { return true; }
+
+private:
+	bool tabLook_ = false;
+	bool tabVertical_ = false;
 };
 
 class InfoItem : public Item {

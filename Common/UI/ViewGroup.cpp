@@ -741,6 +741,32 @@ void LinearLayout::Layout() {
 	}
 }
 
+void LinearLayoutList::Draw(UIContext &dc) {
+	LinearLayout::Draw(dc);
+
+	if (orientation_ != ORIENT_VERTICAL) {
+		return;
+	}
+
+	// Cor da divisória: cor do texto do cabeçalho, bem transparente.
+	const uint32_t lineColor = (dc.GetTheme().headerStyle.fgColor & 0x00FFFFFF) | 0x1E000000;
+
+	View *prev = nullptr;
+	for (View *view : views_) {
+		if (view->GetVisibility() != V_VISIBLE) {
+			continue;
+		}
+		// Linha entre uma linha comum e a próxima; cabeçalhos já têm a sua.
+		if (prev && !dynamic_cast<ItemHeader *>(prev) && !dynamic_cast<ItemHeader *>(view)) {
+			const Bounds &b = prev->GetBounds();
+			if (dc.GetScissorBounds().Intersects(dc.TransformBounds(b))) {
+				dc.FillRect(Drawable(lineColor), Bounds(b.x + 12.0f, b.y2() - 1.0f, b.w - 24.0f, 1.0f));
+			}
+		}
+		prev = view;
+	}
+}
+
 std::string LinearLayoutList::DescribeText() const {
 	auto u = GetI18NCategory(I18NCat::UI_ELEMENTS);
 	return DescribeListOrdered(u->T("List:"));

@@ -638,14 +638,13 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 			}
 		}
 
-		// Lumina: keep Settings in portrait regardless of the user's normal (usually
-		// landscape) rotation setting. Without this early return, onResume() (called
-		// right after onCreate()) would immediately re-query the native config and
-		// revert back to landscape before the user ever sees the forced portrait.
+		// GMP Gameport: Configurações abrem "deitadas" (paisagem), como o resto do
+		// app. Sem este early return, onResume() (chamado logo após onCreate())
+		// consultaria a rotação nativa do usuário e poderia reverter a orientação.
 		if (openingDirectlyToSettings) {
-			if (getRequestedOrientation() != ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
-				Log.i(TAG, "Forcing portrait for Settings (" + cause + ")");
-				setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+			if (getRequestedOrientation() != ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) {
+				Log.i(TAG, "Forcing landscape for Settings (" + cause + ")");
+				setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 			}
 			return;
 		}
@@ -779,10 +778,9 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		if (shortcutParam != null) {
 			Log.i(TAG, "Found Shortcut Parameter in data, passing on: " + shortcutParam);
 			setShortcutParam(shortcutParam);
-			// Lumina: the settings screen reads much better in portrait on a phone, and
-			// we don't want to touch the user's normal (usually landscape) orientation
-			// setting for actual gameplay - so only force it when we know we're
-			// launching straight into Settings via LibraryActivity's gear button.
+			// GMP Gameport: marca que esta abertura é direto nas Configurações (botão
+			// de engrenagem da Biblioteca/Loja) para travar a orientação em paisagem
+			// sem mexer na rotação escolhida pelo usuário para o jogo em si.
 			openingDirectlyToSettings = shortcutParam.contains("--start-screen=gamesettings");
 		}
 
@@ -2028,6 +2026,11 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 			setIntent(intent);
 			String value = parseIntent(intent);
 			if (value != null) {
+				// GMP Gameport: reentrada direto nas Configurações também fica em paisagem.
+				if (value.contains("--start-screen=gamesettings")) {
+					openingDirectlyToSettings = true;
+					updateScreenRotation("onNewIntent");
+				}
 				// TODO: Actually send a command to the native code to launch the new game.
 				Log.i(TAG, "NEW INTENT AT RUNTIME: " + value);
 				Log.i(TAG, "Posting a 'shortcutParam' message to the C++ code.");

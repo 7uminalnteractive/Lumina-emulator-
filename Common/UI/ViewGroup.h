@@ -222,6 +222,10 @@ public:
 	}
 
 	std::string DescribeText() const override;
+
+	// GMP Gameport: desenha uma divisória fina entre as linhas da lista (estilo
+	// das configurações da referência de design).
+	void Draw(UIContext &dc) override;
 };
 
 // GridLayout is a little different from the Android layout. This one has fixed size
