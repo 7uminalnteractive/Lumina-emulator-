@@ -334,12 +334,13 @@ struct FontDesc {
 };
 
 // Append ".ttf" to get the actual filenames.
-// Lumina theme: DM Sans replaces Roboto Condensed as the UI's sans-serif family.
+// GMP Gameport: Neue Montreal is the UI's sans-serif family (previously DM Sans,
+// which itself had replaced Roboto Condensed).
 static const FontDesc g_fontDescs[] = {
-	{FontFamily::SansSerif, FontStyleFlags::Default, "DM Sans", "DM_Sans-Regular"},
-	{FontFamily::SansSerif, FontStyleFlags::Bold, "DM Sans", "DM_Sans-Bold"},
-	{FontFamily::SansSerif, FontStyleFlags::Italic, "DM Sans", "DM_Sans-Italic"},
-	{FontFamily::SansSerif, FontStyleFlags::Light, "DM Sans", "DM_Sans-Light"},
+	{FontFamily::SansSerif, FontStyleFlags::Default, "Neue Montreal", "NeueMontreal-Regular"},
+	{FontFamily::SansSerif, FontStyleFlags::Bold, "Neue Montreal", "NeueMontreal-Bold"},
+	{FontFamily::SansSerif, FontStyleFlags::Italic, "Neue Montreal", "NeueMontreal-Italic"},
+	{FontFamily::SansSerif, FontStyleFlags::Light, "Neue Montreal", "NeueMontreal-Light"},
 	{FontFamily::Fixed, FontStyleFlags::Default, "Inconsolata", "Inconsolata-Regular"},
 };
 

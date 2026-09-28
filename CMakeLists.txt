@@ -1309,10 +1309,10 @@ set(NativeAssets
 	assets/Roboto_Condensed-Light.ttf
 	assets/Roboto_Condensed-Bold.ttf
 	assets/Roboto_Condensed-Italic.ttf
-	assets/DM_Sans-Regular.ttf
-	assets/DM_Sans-Light.ttf
-	assets/DM_Sans-Bold.ttf
-	assets/DM_Sans-Italic.ttf
+	assets/NeueMontreal-Regular.ttf
+	assets/NeueMontreal-Light.ttf
+	assets/NeueMontreal-Bold.ttf
+	assets/NeueMontreal-Italic.ttf
 	assets/Inconsolata-Regular.ttf
 	assets/compat.ini
 	assets/adhoc-servers.json
