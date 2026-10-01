@@ -83,6 +83,38 @@ public class AccountStore {
         return created;
     }
 
+    /**
+     * Igual a addOrUpdateAccount(email, displayName), mas com o ID VINDO DO
+     * SERVIDOR (auth.users.id do Supabase) em vez de um UUID inventado aqui.
+     * Necessário porque as tabelas de direito de acesso (user_products,
+     * subscriptions) referenciam esse mesmo ID -- usar outro faria o usuário
+     * nunca ver nada como "disponível para baixar".
+     *
+     * Se já existia uma conta local antiga com o mesmo e-mail mas ID diferente
+     * (de antes do login real existir), ela é substituída por esta.
+     */
+    public LocalAccount addOrUpdateAccount(String id, String email, String displayName) {
+        List<LocalAccount> accounts = getAccounts();
+
+        for (LocalAccount acc : accounts) {
+            if (acc.id.equals(id)) {
+                acc.email = email;
+                acc.displayName = displayName;
+                saveAccounts(accounts);
+                setActiveAccountId(acc.id);
+                return acc;
+            }
+        }
+
+        accounts.removeIf(acc -> acc.email != null && acc.email.equalsIgnoreCase(email));
+
+        LocalAccount created = new LocalAccount(id, displayName, email);
+        accounts.add(created);
+        saveAccounts(accounts);
+        setActiveAccountId(created.id);
+        return created;
+    }
+
     public LocalAccount getActiveAccount() {
         String activeId = prefs.getString(KEY_ACTIVE_ID, null);
         if (activeId == null) return null;

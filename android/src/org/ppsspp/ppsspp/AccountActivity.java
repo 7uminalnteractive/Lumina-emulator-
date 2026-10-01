@@ -42,6 +42,10 @@ public class AccountActivity extends AppCompatActivity {
 
         findViewById(R.id.btn_logout).setOnClickListener(v -> {
             accountStore.clearActiveAccount();
+            // GMP Gameport: também derruba a sessão real do Supabase -- sem
+            // isso, o próximo perfil escolhido no seletor herdaria o token
+            // de acesso desta conta (ver aviso no topo da SupabaseCatalogSource).
+            new SessionManager(this).clearSession();
             Intent intent = new Intent(this, ProfileSelectorActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);

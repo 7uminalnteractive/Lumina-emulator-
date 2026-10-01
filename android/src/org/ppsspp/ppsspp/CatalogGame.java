@@ -24,13 +24,19 @@ final class CatalogGame {
     final String sha256;
     /** Link direto (catálogo de teste). No servidor real vem de um link assinado. */
     final String downloadUrl;
+    /**
+     * Caminho no bucket privado "games" do Supabase Storage (ex.:
+     * "game/the-best-conmebol.gmp"). Vazio no catálogo de teste, que usa
+     * downloadUrl direto em vez de link assinado.
+     */
+    final String storagePath;
     /** Patches/produtos que liberam este item (ex.: "conmebol", "europeu"). */
     final Set<String> unlockedByProducts;
     /** Planos que liberam este item. "*" = qualquer plano ativo. */
     final Set<String> unlockedByPlans;
 
     CatalogGame(String id, String title, String kind, String fileName, long sizeBytes,
-                String sha256, String downloadUrl,
+                String sha256, String downloadUrl, String storagePath,
                 Set<String> unlockedByProducts, Set<String> unlockedByPlans) {
         this.id = id;
         this.title = title;
@@ -39,6 +45,7 @@ final class CatalogGame {
         this.sizeBytes = sizeBytes;
         this.sha256 = sha256 == null ? "" : sha256;
         this.downloadUrl = downloadUrl == null ? "" : downloadUrl;
+        this.storagePath = storagePath == null ? "" : storagePath;
         this.unlockedByProducts = Collections.unmodifiableSet(unlockedByProducts);
         this.unlockedByPlans = Collections.unmodifiableSet(unlockedByPlans);
     }

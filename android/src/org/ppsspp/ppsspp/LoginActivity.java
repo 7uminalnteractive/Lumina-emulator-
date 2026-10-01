@@ -25,7 +25,8 @@ public class LoginActivity extends Activity {
     private TextView errorText;
 
     private AccountStore accountStore;
-    private AuthClient authClient;
+    private SupabaseAuthClient authClient;
+    private SessionManager sessionManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,7 +35,8 @@ public class LoginActivity extends Activity {
         GmpWindowHelper.applyFullscreenOnly(this, findViewById(R.id.login_root));
 
         accountStore = new AccountStore(this);
-        authClient = new AuthClient(accountStore);
+        authClient = new SupabaseAuthClient();
+        sessionManager = new SessionManager(this);
 
         boolean addingAccount = getIntent().getBooleanExtra(EXTRA_ADDING_ACCOUNT, false);
 
@@ -89,9 +91,17 @@ public class LoginActivity extends Activity {
 
         setLoading(true);
 
-        authClient.signIn(name, email, password, new AuthClient.AuthCallback() {
+        authClient.signIn(email, password, new SupabaseAuthClient.AuthCallback() {
             @Override
-            public void onSuccess(LocalAccount account) {
+            public void onSuccess(SupabaseAuthClient.AuthResult result) {
+                sessionManager.saveSession(result);
+                // O login real não tem um campo "nome" (isso é cadastro, que este
+                // formulário não faz). Usa o nome vindo do servidor se houver;
+                // senão, o que a pessoa digitou aqui mesmo.
+                String finalName = (result.displayName != null && !result.displayName.isEmpty())
+                        ? result.displayName
+                        : name;
+                accountStore.addOrUpdateAccount(result.userId, result.email, finalName);
                 setLoading(false);
                 goToProfileSelector();
             }
@@ -111,11 +121,20 @@ public class LoginActivity extends Activity {
             return;
         }
         setLoading(true);
-        authClient.sendPasswordReset(email, () -> {
-            setLoading(false);
-            Toast.makeText(LoginActivity.this,
-                    "Ainda não temos envio de e-mail real -- essa parte chega junto com o backend.",
-                    Toast.LENGTH_LONG).show();
+        authClient.sendPasswordReset(email, new SupabaseAuthClient.SimpleCallback() {
+            @Override
+            public void onSuccess() {
+                setLoading(false);
+                Toast.makeText(LoginActivity.this,
+                        "Enviamos um e-mail com instruções para redefinir sua senha.",
+                        Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onError(String message) {
+                setLoading(false);
+                showError(message);
+            }
         });
     }
 

@@ -125,6 +125,7 @@ final class LocalJsonCatalogSource implements CatalogSource {
                 Math.max(0, o.optLong("sizeBytes", 0)),
                 o.optString("sha256", "").trim(),
                 o.optString("downloadUrl", "").trim(),
+                "",
                 lowerSet(o.optJSONArray("unlockedByProducts")),
                 lowerSet(o.optJSONArray("unlockedByPlans")));
     }

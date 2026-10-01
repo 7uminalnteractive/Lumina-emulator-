@@ -20,8 +20,10 @@ public class SupabaseAuthClient {
 
     private static final String TAG = "SupabaseAuthClient";
 
-    private static final String SUPABASE_URL = "https://tqsalhscgkepttbczyjq.supabase.co";
-    private static final String SUPABASE_ANON_KEY = "sb_publishable_Q99EhX_HpUVotGGqmWAf4A_pkiTB7bK";
+    // Pacote-privado: SupabaseCatalogSource usa os mesmos valores (evita
+    // duplicar a URL e a chave em dois arquivos).
+    static final String SUPABASE_URL = "https://hbtamibmcvgbxvbktoii.supabase.co";
+    static final String SUPABASE_ANON_KEY = "sb_publishable_REpDy97uh9mUGWhBEk2qpw_f5Lj3ofN";
 
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -159,6 +161,36 @@ public class SupabaseAuthClient {
             });
         } catch (JSONException e) {
             callback.onError("Erro interno ao montar requisição.");
+        }
+    }
+
+    /**
+     * Igual a refreshSession, mas bloqueante (chama call.execute() em vez de
+     * enqueue()). Usado pelo SupabaseCatalogSource, que já roda em thread de
+     * fundo e precisa do resultado antes de repetir a requisição que falhou
+     * com 401.
+     */
+    AuthResult refreshSessionBlocking(String refreshToken) throws IOException {
+        try {
+            JSONObject body = new JSONObject();
+            body.put("refresh_token", refreshToken);
+
+            Request request = new Request.Builder()
+                    .url(SUPABASE_URL + "/auth/v1/token?grant_type=refresh_token")
+                    .addHeader("apikey", SUPABASE_ANON_KEY)
+                    .addHeader("Content-Type", "application/json")
+                    .post(RequestBody.create(body.toString(), JSON))
+                    .build();
+
+            try (Response response = client.newCall(request).execute()) {
+                String responseBody = response.body() != null ? response.body().string() : "";
+                if (!response.isSuccessful()) {
+                    throw new IOException("Sessão expirada, faça login novamente.");
+                }
+                return parseAuthResult(responseBody);
+            }
+        } catch (JSONException e) {
+            throw new IOException("Erro interno ao montar requisição.", e);
         }
     }
 
