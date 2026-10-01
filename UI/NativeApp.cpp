@@ -753,7 +753,19 @@ void NativeInit(int argc, const char *argv[], const CommandLineOptions &cmdLineO
 		}
 		g_screenManager->push(new TouchTestScreen(Path()));
 		if (equals(cmdLineOptions.startScreen.value(), "gamesettings")) {
-			g_screenManager->switchScreen(new LogoScreen(AfterLogoScreen::TO_GAME_SETTINGS));
+			// GMP Gameport: vai direto pras Configurações, sem passar pela tela
+			// de créditos/logo do PPSSPP (o atalho da engrenagem na Biblioteca/
+			// Loja usa esse "--start-screen=gamesettings" especificamente pra
+			// ser instantâneo). Mesmo efeito do antigo LogoScreen(TO_GAME_SETTINGS),
+			// só que sem os 2,5s de tela de logo no meio do caminho.
+			g_luminaCloseAppOnSettingsExit = true;
+			Path gamePath = boot_filename;
+			if (!gamePath.empty()) {
+				g_screenManager->switchScreen(new EmuScreen(gamePath));
+			} else {
+				g_screenManager->switchScreen(new MainScreen());
+			}
+			g_screenManager->push(new GameSettingsScreen(gamePath));
 		} else if (equals(cmdLineOptions.startScreen.value(), "developertools")) {
 			g_screenManager->switchScreen(new MainScreen());
 			g_screenManager->push(new DeveloperToolsScreen(Path()));
