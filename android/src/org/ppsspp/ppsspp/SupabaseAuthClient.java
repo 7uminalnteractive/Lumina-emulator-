@@ -1,5 +1,7 @@
 package org.ppsspp.ppsspp;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -28,6 +30,14 @@ public class SupabaseAuthClient {
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
     private final OkHttpClient client;
+    // GMP Gameport: enqueue() do OkHttp chama o callback numa thread do próprio
+    // OkHttp, não na principal. Quem usa signIn/sendPasswordReset/refreshSession
+    // geralmente mexe em tela (botão, Toast, trocar de Activity) dentro do
+    // callback -- sem isso, dá CalledFromWrongThreadException e o app fecha
+    // na hora (foi exatamente o que aconteceu no login). refreshSessionBlocking
+    // não usa isto: ela já roda bloqueante numa thread de fundo escolhida por
+    // quem chama, de propósito.
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public interface AuthCallback {
         void onSuccess(AuthResult result);
@@ -71,7 +81,8 @@ public class SupabaseAuthClient {
                 @Override
                 public void onFailure(Call call, IOException e) {
                     Log.e(TAG, "Falha de rede no login", e);
-                    callback.onError("Não foi possível conectar ao servidor. Verifique sua internet.");
+                    mainHandler.post(() -> callback.onError(
+                            "Não foi possível conectar ao servidor. Verifique sua internet."));
                 }
 
                 @Override
@@ -79,14 +90,15 @@ public class SupabaseAuthClient {
                     String responseBody = response.body() != null ? response.body().string() : "";
                     if (!response.isSuccessful()) {
                         String message = parseErrorMessage(responseBody, response.code());
-                        callback.onError(message);
+                        mainHandler.post(() -> callback.onError(message));
                         return;
                     }
                     try {
-                        callback.onSuccess(parseAuthResult(responseBody));
+                        AuthResult result = parseAuthResult(responseBody);
+                        mainHandler.post(() -> callback.onSuccess(result));
                     } catch (JSONException e) {
                         Log.e(TAG, "Erro ao interpretar resposta do login", e);
-                        callback.onError("Resposta inesperada do servidor.");
+                        mainHandler.post(() -> callback.onError("Resposta inesperada do servidor."));
                     }
                 }
             });
@@ -110,15 +122,16 @@ public class SupabaseAuthClient {
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
-                    callback.onError("Não foi possível conectar ao servidor.");
+                    mainHandler.post(() -> callback.onError("Não foi possível conectar ao servidor."));
                 }
 
                 @Override
                 public void onResponse(Call call, Response response) {
                     if (response.isSuccessful()) {
-                        callback.onSuccess();
+                        mainHandler.post(callback::onSuccess);
                     } else {
-                        callback.onError("Não foi possível enviar o e-mail de redefinição.");
+                        mainHandler.post(() -> callback.onError(
+                                "Não foi possível enviar o e-mail de redefinição."));
                     }
                 }
             });
@@ -142,20 +155,21 @@ public class SupabaseAuthClient {
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(Call call, IOException e) {
-                    callback.onError("Não foi possível validar a sessão.");
+                    mainHandler.post(() -> callback.onError("Não foi possível validar a sessão."));
                 }
 
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     String responseBody = response.body() != null ? response.body().string() : "";
                     if (!response.isSuccessful()) {
-                        callback.onError("Sessão expirada, faça login novamente.");
+                        mainHandler.post(() -> callback.onError("Sessão expirada, faça login novamente."));
                         return;
                     }
                     try {
-                        callback.onSuccess(parseAuthResult(responseBody));
+                        AuthResult result = parseAuthResult(responseBody);
+                        mainHandler.post(() -> callback.onSuccess(result));
                     } catch (JSONException e) {
-                        callback.onError("Resposta inesperada do servidor.");
+                        mainHandler.post(() -> callback.onError("Resposta inesperada do servidor."));
                     }
                 }
             });
