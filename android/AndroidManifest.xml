@@ -96,6 +96,11 @@
             android:screenOrientation="landscape"
             android:exported="false" />
         <activity
+            android:name=".PlansActivity"
+            android:theme="@style/ppsspp_style"
+            android:screenOrientation="landscape"
+            android:exported="false" />
+        <activity
             android:name=".PpssppActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|locale|keyboard|keyboardHidden|navigation|uiMode"
             android:theme="@style/ppsspp_style"

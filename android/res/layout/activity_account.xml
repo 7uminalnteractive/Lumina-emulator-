@@ -17,6 +17,7 @@
         android:padding="36dp">
 
         <FrameLayout
+            android:id="@+id/account_avatar_frame"
             android:layout_width="84dp"
             android:layout_height="84dp"
             android:layout_marginBottom="16dp">
@@ -38,6 +39,19 @@
                 android:layout_height="16dp"
                 android:layout_gravity="bottom|end"
                 android:background="@drawable/lumina_online_dot" />
+
+            <!-- GMP Gameport: toca no avatar (ou nesse selo) pra escolher uma
+                 foto de perfil, ver AccountActivity.openPhotoPicker(). -->
+            <TextView
+                android:id="@+id/account_avatar_edit_badge"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="top|end"
+                android:background="@drawable/gmp_button_ghost_bg"
+                android:gravity="center"
+                android:text="✎"
+                android:textColor="@color/lumina_on_accent"
+                android:textSize="13sp" />
 
         </FrameLayout>
 
@@ -101,95 +115,219 @@
 
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/btn_change_library_folder"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/gmp_card_bg"
-            android:padding="18dp"
-            android:layout_marginBottom="12dp">
-
-            <TextView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:gravity="center"
-                android:text="📁"
-                android:textSize="18sp"
-                android:background="@drawable/gmp_button_ghost_bg"
-                android:layout_marginEnd="14dp" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Pasta da biblioteca"
-                android:textColor="@color/lumina_text"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="›"
-                android:textColor="@color/lumina_muted"
-                android:textSize="18sp" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/gmp_card_bg"
-            android:padding="18dp"
-            android:layout_marginBottom="12dp">
-
-            <TextView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:gravity="center"
-                android:text="🛒"
-                android:textSize="18sp"
-                android:background="@drawable/gmp_button_ghost_bg"
-                android:layout_marginEnd="14dp" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Loja de patches (GMPES)"
-                android:textColor="@color/lumina_text"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="›"
-                android:textColor="@color/lumina_muted"
-                android:textSize="18sp" />
-
-        </LinearLayout>
-
-        <View
-            android:layout_width="0dp"
             android:layout_height="0dp"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:scrollbars="none"
+            android:fillViewport="true">
 
-        <TextView
-            android:id="@+id/btn_logout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="Sair da conta"
-            android:textColor="@color/lumina_error"
-            android:textStyle="bold"
-            android:textSize="14sp"
-            android:background="@drawable/gmp_button_ghost_bg"
-            android:paddingVertical="14dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/btn_edit_profile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/gmp_card_bg"
+                    android:padding="18dp"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:gravity="center"
+                        android:text="✎"
+                        android:textSize="18sp"
+                        android:background="@drawable/gmp_button_ghost_bg"
+                        android:layout_marginEnd="14dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Editar perfil"
+                        android:textColor="@color/lumina_text"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="›"
+                        android:textColor="@color/lumina_muted"
+                        android:textSize="18sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btn_change_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/gmp_card_bg"
+                    android:padding="18dp"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:gravity="center"
+                        android:text="🔒"
+                        android:textSize="18sp"
+                        android:background="@drawable/gmp_button_ghost_bg"
+                        android:layout_marginEnd="14dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Trocar senha"
+                        android:textColor="@color/lumina_text"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="›"
+                        android:textColor="@color/lumina_muted"
+                        android:textSize="18sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btn_change_theme"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/gmp_card_bg"
+                    android:padding="18dp"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:gravity="center"
+                        android:text="🎨"
+                        android:textSize="18sp"
+                        android:background="@drawable/gmp_button_ghost_bg"
+                        android:layout_marginEnd="14dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Trocar tema"
+                        android:textColor="@color/lumina_text"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="›"
+                        android:textColor="@color/lumina_muted"
+                        android:textSize="18sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btn_switch_profile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/gmp_card_bg"
+                    android:padding="18dp"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:gravity="center"
+                        android:text="👥"
+                        android:textSize="18sp"
+                        android:background="@drawable/gmp_button_ghost_bg"
+                        android:layout_marginEnd="14dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Trocar perfil"
+                        android:textColor="@color/lumina_text"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="›"
+                        android:textColor="@color/lumina_muted"
+                        android:textSize="18sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btn_active_plans"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/gmp_card_bg"
+                    android:padding="18dp"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:gravity="center"
+                        android:text="⭐"
+                        android:textSize="18sp"
+                        android:background="@drawable/gmp_button_ghost_bg"
+                        android:layout_marginEnd="14dp" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Planos ativos"
+                        android:textColor="@color/lumina_text"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="›"
+                        android:textColor="@color/lumina_muted"
+                        android:textSize="18sp" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btn_logout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Sair da conta"
+                    android:textColor="@color/lumina_error"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:background="@drawable/gmp_button_ghost_bg"
+                    android:paddingVertical="14dp"
+                    android:layout_marginTop="8dp" />
+
+            </LinearLayout>
+
+        </ScrollView>
 
     </LinearLayout>
 

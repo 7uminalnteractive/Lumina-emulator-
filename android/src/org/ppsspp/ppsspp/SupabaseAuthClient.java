@@ -153,6 +153,47 @@ public class SupabaseAuthClient {
         }
     }
 
+    /**
+     * GMP Gameport: troca a senha da conta logada (tela "Minha conta > Trocar
+     * senha"), diferente de sendPasswordReset (que é o fluxo de "esqueci minha
+     * senha" por e-mail, sem precisar estar logado).
+     */
+    public void updatePassword(String accessToken, String newPassword, SimpleCallback callback) {
+        try {
+            JSONObject body = new JSONObject();
+            body.put("password", newPassword);
+
+            Request request = new Request.Builder()
+                    .url(SUPABASE_URL + "/auth/v1/user")
+                    .addHeader("apikey", SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + accessToken)
+                    .addHeader("Content-Type", "application/json")
+                    .put(RequestBody.create(body.toString(), JSON))
+                    .build();
+
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    Log.e(TAG, "Falha de rede ao trocar a senha", e);
+                    mainHandler.post(() -> callback.onError("Não foi possível conectar ao servidor."));
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        mainHandler.post(callback::onSuccess);
+                    } else {
+                        String responseBody = response.body() != null ? response.body().string() : "";
+                        String message = parseErrorMessage(responseBody, response.code());
+                        mainHandler.post(() -> callback.onError(message));
+                    }
+                }
+            });
+        } catch (JSONException e) {
+            callback.onError("Erro interno ao montar requisição.");
+        }
+    }
+
     public void sendPasswordReset(String email, SimpleCallback callback) {
         try {
             JSONObject body = new JSONObject();

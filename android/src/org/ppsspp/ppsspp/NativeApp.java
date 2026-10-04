@@ -64,6 +64,12 @@ public class NativeApp {
 	// sempre que a conta muda -- ver AccountStore.java.
 	public static native void syncNicknameFromAccount(String accountName);
 
+	// GMP Gameport: aplica o tema escolhido em "Minha conta > Trocar tema".
+	// Chamado do mesmo jeito que syncNicknameFromAccount -- só funciona depois
+	// que a lib nativa carregou (dentro de PpssppActivity), nunca direto de
+	// AccountActivity. Nome vazio é ignorado no lado nativo.
+	public static native void setThemeName(String themeName);
+
 	public static native void shutdown();
 
 	public static native boolean keyDown(int deviceId, int key, boolean isRepeat);

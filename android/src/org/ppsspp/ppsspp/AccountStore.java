@@ -47,12 +47,14 @@ public class AccountStore {
             JSONArray array = new JSONArray(raw);
             for (int i = 0; i < array.length(); i++) {
                 JSONObject obj = array.getJSONObject(i);
-                result.add(new LocalAccount(
+                LocalAccount account = new LocalAccount(
                         obj.getString("id"),
                         obj.optString("displayName", ""),
                         obj.optString("email", ""),
                         obj.optBoolean("online", true)
-                ));
+                );
+                account.photoPath = obj.optString("photoPath", null);
+                result.add(account);
             }
         } catch (JSONException e) {
             // Dados corrompidos: melhor voltar com lista vazia do que travar o app.
@@ -166,6 +168,18 @@ public class AccountStore {
         return !getAccounts().isEmpty();
     }
 
+    /** Salva o caminho da foto de perfil escolhida (ver AccountActivity). */
+    public void setPhotoPath(String id, String photoPath) {
+        List<LocalAccount> accounts = getAccounts();
+        for (LocalAccount acc : accounts) {
+            if (acc.id.equals(id)) {
+                acc.photoPath = photoPath;
+                saveAccounts(accounts);
+                return;
+            }
+        }
+    }
+
     private void saveAccounts(List<LocalAccount> accounts) {
         JSONArray array = new JSONArray();
         try {
@@ -175,6 +189,9 @@ public class AccountStore {
                 obj.put("displayName", acc.displayName);
                 obj.put("email", acc.email);
                 obj.put("online", acc.online);
+                if (acc.photoPath != null) {
+                    obj.put("photoPath", acc.photoPath);
+                }
                 array.put(obj);
             }
         } catch (JSONException e) {

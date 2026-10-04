@@ -456,6 +456,9 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 			// escolhe, ver LocalAccount.playerId().
 			NativeApp.syncNicknameFromAccount(activeAccount.playerId());
 		}
+		// GMP Gameport: mesma ideia, mas para o tema escolhido em "Minha
+		// conta > Trocar tema" (ver GmpThemePrefs).
+		NativeApp.setThemeName(GmpThemePrefs.getSavedThemeName(this));
 
 		// Initialize audio classes. Do this here since detectOptimalAudioSettings()
 		// needs audioManager
@@ -1185,6 +1188,9 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 			// escolhe, ver LocalAccount.playerId().
 			NativeApp.syncNicknameFromAccount(activeAccount.playerId());
 		}
+		// GMP Gameport: mesma ideia, mas para o tema escolhido em "Minha
+		// conta > Trocar tema" (ver GmpThemePrefs).
+		NativeApp.setThemeName(GmpThemePrefs.getSavedThemeName(this));
 
 		updateSustainedPerformanceMode();
 		sizeManager.onResume();

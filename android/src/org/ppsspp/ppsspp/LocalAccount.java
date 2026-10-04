@@ -25,6 +25,14 @@ public class LocalAccount {
      */
     public boolean online;
 
+    /**
+     * Caminho local (arquivo dentro da pasta privada do app, nunca uma URI de
+     * conteúdo externa) da foto de perfil escolhida pelo usuário em "Minha
+     * conta", ou null/vazio se ele nunca escolheu uma (nesse caso o avatar
+     * continua mostrando a inicial, via initial()).
+     */
+    public String photoPath;
+
     public LocalAccount(String id, String displayName, String email) {
         this(id, displayName, email, true);
     }
