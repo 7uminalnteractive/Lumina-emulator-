@@ -753,7 +753,6 @@ void GamePauseScreen::CreateViews() {
 	// precisar do app Capacitor separado.
 	rightColumnItems->Add(new Choice("Contratar Técnico", ImageID("I_GEAR")))->OnClick.Add([this](UI::EventParams &) {
 		screenManager()->push(new LuminaTecnicoScreen());
-		return UI::EVENT_DONE;
 	});
 
 	rightColumnItems->Add(new Choice(gr->T("Display layout & effects"), ImageID("I_DISPLAY")))->OnClick.Add([this](UI::EventParams &) -> void {
