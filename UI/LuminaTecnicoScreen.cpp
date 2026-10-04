@@ -1,6 +1,8 @@
 #include "Common/Data/Text/I18n.h"
 #include "Common/System/OSD.h"
 #include "Common/UI/Context.h"
+#include "Common/UI/UIScreen.h"
+#include "Common/UI/ScrollView.h"
 #include "Common/UI/View.h"
 #include "Common/UI/ViewGroup.h"
 

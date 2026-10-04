@@ -4,6 +4,7 @@
 #include "Common/File/FileUtil.h"
 #include "Common/Log.h"
 #include "Core/Config.h"
+#include "Core/Util/PathUtil.h"
 
 #include "UI/LuminaTecnicoData.h"
 
