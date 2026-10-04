@@ -107,6 +107,52 @@ public class SupabaseAuthClient {
         }
     }
 
+    /**
+     * GMP Gameport: grava o nome digitado no cadastro como user_metadata.full_name
+     * no Supabase. Sem isso, o nome que a pessoa digita em LoginActivity nunca é
+     * salvo no servidor -- ele só serve de fallback local caso o servidor não
+     * tenha nome nenhum, e como nenhuma conta tinha full_name ainda, o próximo
+     * login sempre devolvia o e-mail como "nome" (era exatamente o bug de "mostra
+     * o e-mail em vez do nome"). Chamar isto depois de um login cujo
+     * AuthResult.displayName veio vazio/igual ao e-mail corrige isso de vez: da
+     * próxima vez o servidor já devolve o nome certo.
+     */
+    public void updateDisplayName(String accessToken, String fullName, SimpleCallback callback) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("full_name", fullName);
+            JSONObject body = new JSONObject();
+            body.put("data", data);
+
+            Request request = new Request.Builder()
+                    .url(SUPABASE_URL + "/auth/v1/user")
+                    .addHeader("apikey", SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + accessToken)
+                    .addHeader("Content-Type", "application/json")
+                    .put(RequestBody.create(body.toString(), JSON))
+                    .build();
+
+            client.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    Log.e(TAG, "Falha de rede ao salvar o nome", e);
+                    mainHandler.post(() -> callback.onError("Não foi possível salvar seu nome agora."));
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) {
+                    if (response.isSuccessful()) {
+                        mainHandler.post(callback::onSuccess);
+                    } else {
+                        mainHandler.post(() -> callback.onError("Não foi possível salvar seu nome agora."));
+                    }
+                }
+            });
+        } catch (JSONException e) {
+            callback.onError("Erro interno ao montar requisição.");
+        }
+    }
+
     public void sendPasswordReset(String email, SimpleCallback callback) {
         try {
             JSONObject body = new JSONObject();

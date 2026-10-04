@@ -1225,6 +1225,9 @@ void GameSettingsScreen::CreateSystemSettings(UI::ViewGroup *systemSettings) {
 	systemSettings->Add(new PopupMultiChoice(&g_Config.iBackgroundAnimation, sy->T("UI background animation"), backgroundAnimations, 0, ARRAY_SIZE(backgroundAnimations), I18NCat::SYSTEM, screenManager()));
 
 	PopupMultiChoiceDynamic *theme = systemSettings->Add(new PopupMultiChoiceDynamic(&g_Config.sThemeName, sy->T("Theme"), GetThemeInfoNames(), I18NCat::THEMES, screenManager()));
+	// GMP Gameport: o visual do app é parte da identidade do GMP -- não deixamos
+	// o usuário trocar pra outro tema (fica sempre "GMP Gameport").
+	theme->SetEnabled(false);
 	theme->OnChoice.Add([](EventParams &e) {
 		UpdateTheme();
 		// Reset the tint/saturation if the theme changed.
@@ -1276,7 +1279,11 @@ void GameSettingsScreen::CreateSystemSettings(UI::ViewGroup *systemSettings) {
 	if (System_GetPropertyInt(SYSPROP_DEVICE_TYPE) != DEVICE_TYPE_VR) {
 		memstickDisplay_ = g_Config.memStickDirectory.ToVisualString();
 		auto memstickPath = systemSettings->Add(new ChoiceWithValueDisplay(&memstickDisplay_, sy->T("Memory Stick folder"), I18NCat::NONE));
-		memstickPath->SetEnabled(!PSP_IsInited());
+		// GMP Gameport: a pasta fica sempre fixa em /storage/emulated/0/GMP --
+		// trocar ela bagunçaria onde o app espera encontrar os patches/saves,
+		// então a escolha fica bloqueada (antes só ficava bloqueada com o
+		// emulador rodando, via !PSP_IsInited()).
+		memstickPath->SetEnabled(false);
 		memstickPath->OnClick.Handle(this, &GameSettingsScreen::OnShowMemstickScreen);
 
 		// Display USB path for convenience.
@@ -1472,7 +1479,14 @@ void GameSettingsScreen::CreateSystemSettings(UI::ViewGroup *systemSettings) {
 	systemSettings->Add(new PopupMultiChoice(&g_Config.iLanguage, psps->T("Game language"), defaultLanguages, -1, ARRAY_SIZE(defaultLanguages), I18NCat::PSPSETTINGS, screenManager()));
 	static const char *models[] = { "PSP-1000", "PSP-2000/3000" };
 	systemSettings->Add(new PopupMultiChoice(&g_Config.iPSPModel, sy->T("PSP Model"), models, 0, ARRAY_SIZE(models), I18NCat::SYSTEM, screenManager()))->SetEnabled(!PSP_IsInited());
-	systemSettings->Add(new PopupTextInputChoice(GetRequesterToken(), &g_Config.sNickName, sy->T("Nickname"), "", 32, screenManager()))->OnChange.Add([](UI::EventParams &e) {
+	// GMP Gameport: o "Apelido" não é mais digitado pelo usuário -- é um ID de
+	// jogador derivado do UUID real da conta no Supabase (ver
+	// syncNicknameFromAccount() em app-android.cpp, chamado do lado Java com o
+	// ID da conta em vez do nome de exibição), então o campo fica só pra
+	// leitura aqui.
+	auto *nickname = systemSettings->Add(new PopupTextInputChoice(GetRequesterToken(), &g_Config.sNickName, sy->T("Nickname"), "", 32, screenManager()));
+	nickname->SetEnabled(false);
+	nickname->OnChange.Add([](UI::EventParams &e) {
 		// Copy to infrastructure name if valid and not already set.
 		if (g_Config.sInfrastructureUsername.empty()) {
 			if (g_Config.sNickName == SanitizeString(g_Config.sNickName, StringRestriction::AlphaNumDashUnderscore, 3, 16)) {

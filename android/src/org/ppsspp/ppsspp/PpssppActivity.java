@@ -450,8 +450,11 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		// antes do jogo rodar.
 		AccountStore accountStore = new AccountStore(this);
 		LocalAccount activeAccount = accountStore.getActiveAccount();
-		if (activeAccount != null && activeAccount.displayName != null && !activeAccount.displayName.trim().isEmpty()) {
-			NativeApp.syncNicknameFromAccount(activeAccount.displayName.trim());
+		if (activeAccount != null && activeAccount.playerId() != null && !activeAccount.playerId().isEmpty()) {
+			// GMP Gameport: usa o ID de jogador derivado do Supabase (não o
+			// nome de exibição) -- o "Apelido" não é mais algo que o usuário
+			// escolhe, ver LocalAccount.playerId().
+			NativeApp.syncNicknameFromAccount(activeAccount.playerId());
 		}
 
 		// Initialize audio classes. Do this here since detectOptimalAudioSettings()
@@ -1176,8 +1179,11 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		// toda vez que esta Activity volta ao topo, inclusive nesse caso.
 		AccountStore accountStore = new AccountStore(this);
 		LocalAccount activeAccount = accountStore.getActiveAccount();
-		if (activeAccount != null && activeAccount.displayName != null && !activeAccount.displayName.trim().isEmpty()) {
-			NativeApp.syncNicknameFromAccount(activeAccount.displayName.trim());
+		if (activeAccount != null && activeAccount.playerId() != null && !activeAccount.playerId().isEmpty()) {
+			// GMP Gameport: usa o ID de jogador derivado do Supabase (não o
+			// nome de exibição) -- o "Apelido" não é mais algo que o usuário
+			// escolhe, ver LocalAccount.playerId().
+			NativeApp.syncNicknameFromAccount(activeAccount.playerId());
 		}
 
 		updateSustainedPerformanceMode();

@@ -95,13 +95,34 @@ public class LoginActivity extends Activity {
             @Override
             public void onSuccess(SupabaseAuthClient.AuthResult result) {
                 sessionManager.saveSession(result);
-                // O login real não tem um campo "nome" (isso é cadastro, que este
-                // formulário não faz). Usa o nome vindo do servidor se houver;
-                // senão, o que a pessoa digitou aqui mesmo.
-                String finalName = (result.displayName != null && !result.displayName.isEmpty())
-                        ? result.displayName
-                        : name;
+                // GMP Gameport: o servidor só tem um nome de verdade se
+                // user_metadata.full_name já foi salvo alguma vez; até lá,
+                // SupabaseAuthClient devolve o e-mail como "nome" (era
+                // exatamente o bug de "mostra o e-mail em vez do nome que eu
+                // digitei"). Nesse caso usamos o nome digitado aqui mesmo e
+                // aproveitamos para salvá-lo no servidor, pra próxima vez já
+                // vir certo direto da resposta do login.
+                boolean serverHasRealName = result.displayName != null
+                        && !result.displayName.isEmpty()
+                        && !result.displayName.equalsIgnoreCase(result.email);
+                String finalName = serverHasRealName ? result.displayName : name;
                 accountStore.addOrUpdateAccount(result.userId, result.email, finalName);
+
+                if (!serverHasRealName && !TextUtils.isEmpty(name)) {
+                    authClient.updateDisplayName(result.accessToken, name, new SupabaseAuthClient.SimpleCallback() {
+                        @Override
+                        public void onSuccess() {
+                            // Nada a fazer na tela -- já navegamos com o nome certo.
+                        }
+
+                        @Override
+                        public void onError(String message) {
+                            // Não trava o login por isso; só não vai persistir o
+                            // nome agora (tentamos de novo no próximo login).
+                        }
+                    });
+                }
+
                 setLoading(false);
                 goToProfileSelector();
             }

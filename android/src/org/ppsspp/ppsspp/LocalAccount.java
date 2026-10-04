@@ -36,6 +36,25 @@ public class LocalAccount {
         this.online = online;
     }
 
+    /**
+     * ID de jogador curto, estável e não editável, derivado do ID real da
+     * conta no Supabase (auth.users.id) -- usado como "Apelido" (Nickname)
+     * nativo do PPSSPP em vez de deixar o usuário digitar qualquer coisa.
+     * Mesma conta sempre gera o mesmo ID, e dois jogadores nunca colidem
+     * (o próprio Supabase garante isso ao gerar o UUID da conta).
+     *
+     * O campo nativo de nickname exige 3-16 caracteres alfanuméricos, então
+     * removemos os hifens do UUID e pegamos os primeiros 12 caracteres.
+     */
+    public String playerId() {
+        if (id == null || id.isEmpty()) {
+            return "";
+        }
+        String noDashes = id.replace("-", "");
+        String shortId = noDashes.length() > 12 ? noDashes.substring(0, 12) : noDashes;
+        return "GMP" + shortId.toUpperCase();
+    }
+
     /** Inicial usada no avatar circular quando não há foto (ex: "L" para "Luan"). */
     public String initial() {
         if (displayName != null && !displayName.isEmpty()) {

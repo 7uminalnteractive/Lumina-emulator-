@@ -1002,14 +1002,18 @@ extern "C" void Java_org_ppsspp_ppsspp_NativeApp_saveStateForBackground(JNIEnv *
 }
 
 // GMP Gameport: chamado do lado Java sempre que a conta ativa muda (login,
-// troca de perfil, nome atualizado) para que o apelido de rede/AdHoc
-// (g_Config.sNickName) e o nome de usuário de infraestrutura
-// (g_Config.sInfrastructureUsername) fiquem sincronizados com o nome da
-// conta GMP -- em vez do usuário ter que digitar manualmente em
-// Configurações > Rede, como o PPSSPP original exige. Usa exatamente a
-// mesma sanitização (SanitizeString com AlphaNumDashUnderscore, 3-16
-// caracteres) que a tela de Configurações já aplica no nickname, para o
-// nome resultante ser sempre válido para AdHoc/infraestrutura.
+// troca de perfil) para que o apelido de rede/AdHoc (g_Config.sNickName) e o
+// nome de usuário de infraestrutura (g_Config.sInfrastructureUsername)
+// fiquem sincronizados com o ID da conta GMP -- em vez do usuário poder
+// digitar/trocar isso manualmente em Configurações > Sistema (o campo lá é
+// só leitura agora, ver GameSettingsScreen.cpp). Desde a correção do bug de
+// "mostra o e-mail em vez do nome", o valor recebido aqui é
+// LocalAccount.playerId() (um ID curto derivado do UUID real da conta no
+// Supabase), não mais o nome de exibição digitado pelo usuário -- assim
+// nunca personalizável e nunca colide entre contas. Usa exatamente a mesma
+// sanitização (SanitizeString com AlphaNumDashUnderscore, 3-16 caracteres)
+// que a tela de Configurações já aplicava no nickname, para o resultado ser
+// sempre válido para AdHoc/infraestrutura.
 extern "C" void Java_org_ppsspp_ppsspp_NativeApp_syncNicknameFromAccount(JNIEnv *env, jclass, jstring jaccountName) {
 	std::string accountName = GetJavaString(env, jaccountName);
 	std::string sanitized = SanitizeString(accountName, StringRestriction::AlphaNumDashUnderscore, 3, 16);
