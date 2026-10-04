@@ -72,6 +72,7 @@
 #include "UI/BackgroundAudio.h"
 #include "UI/MiscViews.h"
 #include "UI/AdhocServerScreen.h"
+#include "UI/LuminaTecnicoScreen.h"
 
 // This is in an objective-C file.
 #if PPSSPP_PLATFORM(IOS)
@@ -746,6 +747,14 @@ void GamePauseScreen::CreateViews() {
 			screenManager()->push(new RetroAchievementsListScreen(gamePath_));
 		});
 	}
+
+	// GMP Gameport / ML-PRO: "Contratar Técnico" nativo -- detecta o patch de
+	// Master League instalado e deixa escolher o técnico direto por aqui, sem
+	// precisar do app Capacitor separado.
+	rightColumnItems->Add(new Choice("Contratar Técnico", ImageID("I_GEAR")))->OnClick.Add([this](UI::EventParams &) {
+		screenManager()->push(new LuminaTecnicoScreen());
+		return UI::EVENT_DONE;
+	});
 
 	rightColumnItems->Add(new Choice(gr->T("Display layout & effects"), ImageID("I_DISPLAY")))->OnClick.Add([this](UI::EventParams &) -> void {
 		screenManager()->push(new DisplayLayoutScreen(gamePath_));

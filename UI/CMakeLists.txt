@@ -55,6 +55,10 @@ list(APPEND UISource
 	MiscViews.cpp
 	PauseScreen.h
 	PauseScreen.cpp
+	LuminaTecnicoScreen.h
+	LuminaTecnicoScreen.cpp
+	LuminaTecnicoData.h
+	LuminaTecnicoData.cpp
 	SimpleDialogScreen.h
 	SimpleDialogScreen.cpp
 	TabbedDialogScreen.h
