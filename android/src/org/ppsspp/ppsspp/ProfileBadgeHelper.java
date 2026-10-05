@@ -14,12 +14,12 @@ import java.io.File;
 
 /**
  * GMP Gameport: centraliza como a Biblioteca, a Loja e a tela de Conta
- * mostram a conta ativa (foto ou inicial no avatar, ponto de status
- * online/offline).
+ * mostram a conta ativa no avatar (foto, se o usuário escolheu uma, senão a
+ * inicial do nome).
  *
- * Antes, cada tela tinha o nome "G" fixo no layout e o ponto verde sempre
- * ligado, sem nenhuma leitura real da conta. Agora as três chamam este
- * mesmo helper, então o comportamento fica igual em todo lugar.
+ * O parâmetro statusDotView continua existindo por compatibilidade com as
+ * três telas que o passam, mas o ponto verde/cinza de online-offline foi
+ * removido a pedido do usuário -- bind() sempre o esconde agora.
  */
 final class ProfileBadgeHelper {
 
@@ -47,9 +47,10 @@ final class ProfileBadgeHelper {
             }
         }
         if (statusDotView != null) {
-            boolean online = active != null && active.online;
-            statusDotView.setBackgroundResource(
-                    online ? R.drawable.lumina_online_dot : R.drawable.lumina_offline_dot);
+            // GMP Gameport: a bolinha de status online/offline foi removida
+            // a pedido do usuário -- fica sempre escondida, em todo lugar
+            // que usa este helper (Biblioteca, Loja, Conta).
+            statusDotView.setVisibility(View.GONE);
         }
     }
 

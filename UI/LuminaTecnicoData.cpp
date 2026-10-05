@@ -4,17 +4,24 @@
 #include "Common/File/FileUtil.h"
 #include "Common/Log.h"
 #include "Core/Config.h"
-#include "Core/Util/PathUtil.h"
 
 #include "UI/LuminaTecnicoData.h"
 
-// TODO(preencher com os dados reais de MLPRO-main.zip, www/index.html):
-// Esta é uma tabela de exemplo só pra deixar a tela funcional enquanto os dados
-// reais não chegam. "texturesSubdir" e "coachHexCodes" aqui são placeholders —
-// NÃO vão detectar nenhum patch de verdade até serem substituídos.
+// GMP Gameport: o caminho real (confirmado pelo usuário) é
+// <pasta do cartão de memória>/Sistema/.TEXTURES/<pasta do patch>/texture.ini
+// -- note que é ".TEXTURES" (oculta, com ponto) dentro de "Sistema", e o
+// arquivo é "texture.ini" no singular, diferente da convenção padrão do
+// PPSSPP (pasta "TEXTURES" direto na raiz, arquivo "textures.ini" no
+// plural). Por isso construímos o caminho a partir de g_Config.memStickDirectory
+// na mão em vez de usar GetSysDirectory(DIRECTORY_TEXTURES).
+static Path GmpTexturesRoot() {
+	return g_Config.memStickDirectory / "Sistema" / ".TEXTURES";
+}
+
+// "THE BEST PATCH" é o único nome de pasta confirmado até agora. Os hex
+// codes do slot do técnico ainda não foram enviados -- ver TODO abaixo.
 const std::vector<LuminaPatchDef> kLuminaPatches = {
-	{ "lpfl27", "LPFL 27", "LPFL27", { /* TODO: hex codes do slot de técnico no LPFL 27 */ } },
-	{ "mrgamer", "MR GAMER", "MRGAMER", { /* TODO: hex codes do slot de técnico no MR GAMER */ } },
+	{ "the_best_patch", "The Best Patch", "THE BEST PATCH", { /* TODO: hex codes do slot de técnico, a receber */ } },
 };
 
 // TODO(preencher com os 19 técnicos reais de www/index.html):
@@ -33,10 +40,10 @@ static bool EqualsNoCase(const std::string &a, const std::string &b) {
 }
 
 int LuminaDetectInstalledPatch() {
-	const Path texturesRoot = GetSysDirectory(DIRECTORY_TEXTURES);
+	const Path texturesRoot = GmpTexturesRoot();
 	for (size_t i = 0; i < kLuminaPatches.size(); i++) {
 		const LuminaPatchDef &patch = kLuminaPatches[i];
-		const Path iniPath = texturesRoot / patch.texturesSubdir / "textures.ini";
+		const Path iniPath = texturesRoot / patch.texturesSubdir / "texture.ini";
 		if (File::Exists(iniPath)) {
 			INFO_LOG(Log::System, "Lumina/ML-PRO: patch detectado: %s (%s)", patch.displayName.c_str(), iniPath.c_str());
 			return (int)i;
@@ -46,11 +53,11 @@ int LuminaDetectInstalledPatch() {
 }
 
 bool LuminaApplyTecnico(const LuminaPatchDef &patch, const LuminaTecnicoDef &tecnico, std::string *errorStr) {
-	const Path iniPath = GetSysDirectory(DIRECTORY_TEXTURES) / patch.texturesSubdir / "textures.ini";
+	const Path iniPath = GmpTexturesRoot() / patch.texturesSubdir / "texture.ini";
 
 	std::string contents;
 	if (!File::ReadTextFileToString(iniPath, &contents)) {
-		*errorStr = "Não foi possível ler o textures.ini desse patch.";
+		*errorStr = "Não foi possível ler o texture.ini desse patch.";
 		return false;
 	}
 
@@ -62,7 +69,7 @@ bool LuminaApplyTecnico(const LuminaPatchDef &patch, const LuminaTecnicoDef &tec
 		return false;
 	}
 
-	// O textures.ini é feito de linhas "HEXCODE=caminho/da/imagem.png". Trocamos só
+	// O texture.ini é feito de linhas "HEXCODE=caminho/da/imagem.png". Trocamos só
 	// as linhas cujo hex code (a chave, antes do "=") está na lista de hex codes do
 	// técnico atual desse patch -- preservando todo o resto do arquivo (outras
 	// texturas, comentários, opções) exatamente como estava.
@@ -107,7 +114,7 @@ bool LuminaApplyTecnico(const LuminaPatchDef &patch, const LuminaTecnicoDef &tec
 	}
 
 	if (replacedCount == 0) {
-		*errorStr = "Nenhuma linha do técnico foi encontrada no textures.ini (os hex codes podem estar desatualizados).";
+		*errorStr = "Nenhuma linha do técnico foi encontrada no texture.ini (os hex codes podem estar desatualizados).";
 		return false;
 	}
 
@@ -119,7 +126,7 @@ bool LuminaApplyTecnico(const LuminaPatchDef &patch, const LuminaTecnicoDef &tec
 	}
 
 	if (!File::WriteStringToFile(true, newContents, iniPath)) {
-		*errorStr = "Não foi possível salvar o textures.ini (verifique a permissão de armazenamento).";
+		*errorStr = "Não foi possível salvar o texture.ini (verifique a permissão de armazenamento).";
 		return false;
 	}
 

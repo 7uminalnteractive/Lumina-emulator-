@@ -408,10 +408,10 @@ void GamePauseScreen::update() {
 		lastDNSConfigLoaded_ = dnsConfig.loaded;
 	}
 
-	if (playButton_) {
-		const bool mustRunBehind = MustRunBehind();
-		playButton_->SetEnabled(!mustRunBehind);
-	}
+	// GMP Gameport / ML-PRO: playButton_ virou o atalho de "Contratar
+	// Técnico" (ver CreateViews()) -- o antigo toggle de "rodar em segundo
+	// plano" usava este update() pra desabilitar o botão conforme
+	// MustRunBehind(); não se aplica mais aqui.
 
 	SetVRAppMode(VRAppMode::VR_MENU_MODE);
 }
@@ -576,15 +576,10 @@ void GamePauseScreen::CreateViews() {
 	// retrato) -- como o layout agora é sempre vertical, sempre há o mesmo
 	// espaço que o modo retrato já tinha para ela.
 	{
-		std::string title;
-		std::vector<GameDBInfo> dbInfos;
-		const bool inGameDB = g_gameDB.GetGameInfos(g_paramSFO.GetDiscID(), &dbInfos);
-		if (inGameDB) {
-			title = dbInfos[0].title;
-		} else {
-			title = g_paramSFO.GetValueString("TITLE");
-		}
-		TopBar *topBar = new TopBar(*screenManager()->getUIContext(), TopBarFlags::ContextMenuButton, title);
+		// GMP Gameport: a barra de cima não mostra mais o título do jogo
+		// (ex.: "GOAT CONMEBOL 2K26") -- a pedido do usuário, fica só com o
+		// botão de voltar e o menu de contexto.
+		TopBar *topBar = new TopBar(*screenManager()->getUIContext(), TopBarFlags::ContextMenuButton, "");
 		root_->Add(topBar);
 
 		topBar->OnContextMenuClick.Add([this](UI::EventParams &e) {
@@ -748,12 +743,9 @@ void GamePauseScreen::CreateViews() {
 		});
 	}
 
-	// GMP Gameport / ML-PRO: "Contratar Técnico" nativo -- detecta o patch de
-	// Master League instalado e deixa escolher o técnico direto por aqui, sem
-	// precisar do app Capacitor separado.
-	rightColumnItems->Add(new Choice("Contratar Técnico", ImageID("I_GEAR")))->OnClick.Add([this](UI::EventParams &) {
-		screenManager()->push(new LuminaTecnicoScreen());
-	});
+	// GMP Gameport / ML-PRO: "Contratar Técnico" saiu de daqui -- agora mora
+	// no ícone de play da barra de cima (ver middleColumn mais abaixo), não
+	// é mais um item de lista separado.
 
 	rightColumnItems->Add(new Choice(gr->T("Display layout & effects"), ImageID("I_DISPLAY")))->OnClick.Add([this](UI::EventParams &) -> void {
 		screenManager()->push(new DisplayLayoutScreen(gamePath_));
@@ -794,14 +786,14 @@ void GamePauseScreen::CreateViews() {
 
 	if (middleColumn) {
 		middleColumn->SetSpacing(8.0f);
-		playButton_ = middleColumn->Add(new Choice(g_Config.bRunBehindPauseMenu ? ImageID("I_PAUSE_LINE") : ImageID("I_PLAY_LINE"), new LinearLayoutParams(64, 64)));
+		// GMP Gameport / ML-PRO: este ícone era o "play"/"continuar rodando
+		// em segundo plano" (bRunBehindPauseMenu) -- virou o atalho de
+		// "Contratar Técnico" a pedido do usuário. "Continuar" o jogo já
+		// existe separado, no exitRow lá embaixo, então nada se perde.
+		playButton_ = middleColumn->Add(new Choice(ImageID("I_GEAR"), new LinearLayoutParams(64, 64)));
 		playButton_->OnClick.Add([this](UI::EventParams &e) {
-			g_Config.bRunBehindPauseMenu = !g_Config.bRunBehindPauseMenu;
-			playButton_->SetIconLeft(g_Config.bRunBehindPauseMenu ? ImageID("I_PAUSE_LINE") : ImageID("I_PLAY_LINE"));
+			screenManager()->push(new LuminaTecnicoScreen());
 		});
-
-		bool mustRunBehind = MustRunBehind();
-		playButton_->SetEnabled(!mustRunBehind);
 
 		Choice *infoButton = middleColumn->Add(new Choice(ImageID("I_INFO"), new LinearLayoutParams(64, 64)));
 		infoButton->OnClick.Add([this](UI::EventParams &e) {
