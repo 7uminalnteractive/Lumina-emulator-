@@ -18,15 +18,37 @@ static Path GmpTexturesRoot() {
 	return g_Config.memStickDirectory / "Sistema" / ".TEXTURES";
 }
 
-// "THE BEST PATCH" é o único nome de pasta confirmado até agora. Os hex
-// codes do slot do técnico ainda não foram enviados -- ver TODO abaixo.
-const std::vector<LuminaPatchDef> kLuminaPatches = {
-	{ "the_best_patch", "The Best Patch", "THE BEST PATCH", { /* TODO: hex codes do slot de técnico, a receber */ } },
+// GMP Gameport: hex codes reais do slot "técnico de clube" no texture.ini de
+// "The Best Patch" (recebidos do usuário, trecho "#ML PRO" do arquivo). São
+// 5 linhas porque o jogo usa o mesmo retrato em vários lugares/resoluções --
+// hoje todas apontam pro técnico padrão do patch (Fernando Diniz), e é
+// exatamente isso que LuminaApplyTecnico() troca.
+//
+// Existe também um grupo de 3 hex codes apontando para "MLPRO/Kit Treino" no
+// mesmo arquivo -- é outra coisa (kit de treino, não foto de técnico), por
+// isso não entra em coachHexCodes. Se um dia "trocar kit de treino" for uma
+// função à parte, esses 3 hex codes são:
+//   0000000000000000a5a4d8a8, 000000000000000005559a4c, 00000000000000003201c284
+static const std::vector<std::string> kTheBestPatchCoachHexCodes = {
+	"0000000000000000515d4ee6",
+	"0000000000000000ec964817",
+	"0000000000000000ecfb38f5",
+	"000000000000000059573bfe",
+	"000000000000000020580ca4",
 };
 
-// TODO(preencher com os 19 técnicos reais de www/index.html):
+const std::vector<LuminaPatchDef> kLuminaPatches = {
+	{ "the_best_patch", "The Best Patch", "THE BEST PATCH", kTheBestPatchCoachHexCodes },
+};
+
+// GMP Gameport: técnicos confirmados. O caminho da foto é relativo à pasta
+// de texturas do próprio patch (Sistema/.TEXTURES/THE BEST PATCH/...).
+//
+// TODO(preencher com o restante dos 19 técnicos): falta nome + caminho da
+// foto de cada um -- "Fernando Diniz" é o único confirmado até agora (é o
+// valor padrão que já vem nos 5 hex codes acima).
 const std::vector<LuminaTecnicoDef> kLuminaTecnicos = {
-	// { "id", "Nome do Técnico", "caminho/da/foto.png" },
+	{ "fernando_diniz", "Fernando Diniz", "MLPRO/Tecnicos/Técnico de Clube/Fernando Diniz/Diniz.png" },
 };
 
 static bool EqualsNoCase(const std::string &a, const std::string &b) {

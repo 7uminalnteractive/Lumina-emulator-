@@ -22,7 +22,6 @@ void LuminaTecnicoScreen::CreateViews() {
 	LinearLayout *topBar = root_->Add(new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT, Margins(10, 10, 10, 0))));
 	topBar->Add(new Choice(di->T("Back"), ImageID("I_NAVIGATE_BACK"), new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT)))->OnClick.Add([this](UI::EventParams &) {
 		TriggerFinish(DR_BACK);
-		return UI::EVENT_DONE;
 	});
 	topBar->Add(new TextView("Contratar Técnico", new LinearLayoutParams(1.0f, Gravity::G_VCENTER, Margins(12, 0))));
 
@@ -65,7 +64,6 @@ void LuminaTecnicoScreen::CreateViews() {
 			} else {
 				g_OSD.Show(OSDType::MESSAGE_ERROR, errorStr);
 			}
-			return UI::EVENT_DONE;
 		});
 	}
 }
