@@ -250,17 +250,23 @@ void GameSettingsScreen::CreateTabs() {
 		CreateAudioSettings(parent);
 	});
 
-	AddTab("GameSettingsNetworking", ms->T("Networking"), ImageID("I_WIFI"), [this](UI::LinearLayout *parent) {
-		auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
-		parent->Add(new PaneTitleBar(gamePath_, ms->T("Networking"), "network"));
-		CreateNetworkingSettings(parent);
-	});
-
-	AddTab("GameSettingsTools", ms->T("Tools"), ImageID("I_TOOLS"), [this](UI::LinearLayout *parent) {
-		auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
-		parent->Add(new PaneTitleBar(gamePath_, ms->T("Tools"), "tools"));
-		CreateToolsSettings(parent);
-	});
+	// GMP Gameport: abas "Rede" e "Ferramentas" ficam completamente ocultas --
+	// nenhum item delas está na lista de configurações que o usuário quer
+	// visível. As funções CreateNetworkingSettings()/CreateToolsSettings()
+	// continuam existindo (ver mais abaixo) só não são mais chamadas daqui;
+	// é só reativar os AddTab abaixo se precisar delas de volta algum dia.
+	//
+	// AddTab("GameSettingsNetworking", ms->T("Networking"), ImageID("I_WIFI"), [this](UI::LinearLayout *parent) {
+	// 	auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
+	// 	parent->Add(new PaneTitleBar(gamePath_, ms->T("Networking"), "network"));
+	// 	CreateNetworkingSettings(parent);
+	// });
+	//
+	// AddTab("GameSettingsTools", ms->T("Tools"), ImageID("I_TOOLS"), [this](UI::LinearLayout *parent) {
+	// 	auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
+	// 	parent->Add(new PaneTitleBar(gamePath_, ms->T("Tools"), "tools"));
+	// 	CreateToolsSettings(parent);
+	// });
 
 	AddTab("GameSettingsSystem", ms->T("System"), ImageID("I_PSP"), [this](UI::LinearLayout *parent) {
 		auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
@@ -268,25 +274,39 @@ void GameSettingsScreen::CreateTabs() {
 		CreateSystemSettings(parent);
 	});
 
-	int deviceType = System_GetPropertyInt(SYSPROP_DEVICE_TYPE);
-	if ((deviceType == DEVICE_TYPE_VR) || g_Config.bForceVR) {
-		AddTab("GameSettingsVR", ms->T("VR"), ImageID::invalid(), [this](UI::LinearLayout *parent) {
-			CreateVRSettings(parent);
-		});
-	}
+	// GMP Gameport: aba de VR também fica fora -- não está na lista de
+	// configurações pedida, e o app roda só em celular/tablet Android mesmo.
+	// int deviceType = System_GetPropertyInt(SYSPROP_DEVICE_TYPE);
+	// if ((deviceType == DEVICE_TYPE_VR) || g_Config.bForceVR) {
+	// 	AddTab("GameSettingsVR", ms->T("VR"), ImageID::invalid(), [this](UI::LinearLayout *parent) {
+	// 		CreateVRSettings(parent);
+	// 	});
+	// }
 }
 
 // TODO: Make this generic
 extern int DefaultDepthRaster();
 
 // Graphics
+//
+// GMP Gameport: esta aba foi reduzida a só os dois toggles de substituição de
+// textura que o usuário pediu pra manter visíveis ("Salvar novas texturas" e
+// "Guardar novas texturas") -- todo o resto (resolução, backend, MSAA,
+// upscaling, VSync, etc.) foi removido da UI. O código original continua
+// disponível no histórico do projeto se precisar voltar atrás.
 void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings) {
-	auto gr = GetI18NCategory(I18NCat::GRAPHICS);
-	auto sy = GetI18NCategory(I18NCat::SYSTEM);
-	auto vr = GetI18NCategory(I18NCat::VR);
 	auto dev = GetI18NCategory(I18NCat::DEVELOPER);
 
 	using namespace UI;
+
+	graphicsSettings->Add(new CheckBox(&g_Config.bSaveNewTextures, dev->T("Save new textures")));
+	graphicsSettings->Add(new CheckBox(&g_Config.bReplaceTextures, dev->T("Replace textures")));
+	return;
+
+#if 0
+	auto gr = GetI18NCategory(I18NCat::GRAPHICS);
+	auto sy = GetI18NCategory(I18NCat::SYSTEM);
+	auto vr = GetI18NCategory(I18NCat::VR);
 
 	graphicsSettings->Add(new ItemHeader(gr->T("Rendering Mode")));
 
@@ -621,12 +641,26 @@ void GameSettingsScreen::CreateGraphicsSettings(UI::ViewGroup *graphicsSettings)
 		graphicsSettings->Add(new BitCheckBox(&g_Config.iShowStatusFlags, (int)ShowStatusFlags::BATTERY_PERCENT, gr->T("Show Battery %")));
 	}
 	AddOverlayList(graphicsSettings, screenManager());
+#endif  // #if 0 -- GMP Gameport: resto da aba Graphics desativado, ver comentário no topo da função.
 }
 
+// GMP Gameport: esta aba foi reduzida a só "Reprodução do áudio" (modo
+// Suave/Clássico), que é o único item de áudio que o usuário quer visível.
+// O padrão precisa ser "Suave" (índice 0, AudioSyncMode::GRANULAR) -- isso é
+// definido em Core/Config.cpp (não incluído neste zip), então se o padrão
+// atual não for esse, é só mudar o valor padrão de g_Config.iAudioPlaybackMode
+// pra 0 lá.
 void GameSettingsScreen::CreateAudioSettings(UI::ViewGroup *audioSettings) {
 	using namespace UI;
 
 	auto a = GetI18NCategory(I18NCat::AUDIO);
+
+	audioSettings->Add(new ItemHeader(a->T("Audio playback")));
+	static const char *syncModes[] = { "Smooth (reduces artifacts)", "Classic (lowest latency)" };
+	audioSettings->Add(new PopupMultiChoice(&g_Config.iAudioPlaybackMode, a->T("Playback mode"), syncModes, 0, ARRAY_SIZE(syncModes), I18NCat::AUDIO, screenManager()));
+	return;
+
+#if 0
 	auto ac = GetI18NCategory(I18NCat::ACHIEVEMENTS);
 	auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
 	auto di = GetI18NCategory(I18NCat::DIALOG);
@@ -787,21 +821,51 @@ void GameSettingsScreen::CreateAudioSettings(UI::ViewGroup *audioSettings) {
 			Microphone::onMicDeviceChange();
 		});
 	}
+#endif  // #if 0 -- GMP Gameport: resto da aba Audio desativado, ver comentário no topo da função.
 }
 
+// GMP Gameport: esta aba foi reduzida aos 5 itens que o usuário pediu pra
+// manter visíveis: Mapeamento de Controles, Controles do toque na tela,
+// Editar esquema do controle de toque, Estilo dos botões e Opacidade dos
+// botões. O resto (analógico, teclado, mouse, HID/XInput/DirectInput,
+// vibração, D-Pad sticky, auto-hide etc.) foi removido da UI.
 void GameSettingsScreen::CreateControlsSettings(UI::ViewGroup *controlsSettings) {
 	using namespace UI;
 
 	auto co = GetI18NCategory(I18NCat::CONTROLS);
 	auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
-	auto di = GetI18NCategory(I18NCat::DIALOG);
-
-	int deviceType = System_GetPropertyInt(SYSPROP_DEVICE_TYPE);
 
 	controlsSettings->Add(new ItemHeader(ms->T("Controls")));
 	controlsSettings->Add(new Choice(co->T("Control mapping")))->OnClick.Add([this](UI::EventParams &e) {
 		screenManager()->push(new ControlMappingScreen(gamePath_));
 	});
+
+	controlsSettings->Add(new ItemHeader(co->T("On-screen touch controls")));
+	controlsSettings->Add(new CheckBox(&g_Config.bShowTouchControls, co->T("On-screen touch controls")));
+	Choice *layoutEditorChoice = controlsSettings->Add(new Choice(co->T("Edit touch control layout")));
+	layoutEditorChoice->OnClick.Add([this](UI::EventParams &e) {
+		screenManager()->push(new TouchControlLayoutScreen(gamePath_));
+	});
+	layoutEditorChoice->SetEnabledPtr(&g_Config.bShowTouchControls);
+
+	static const char *touchControlStyles[] = { "Classic", "Thin borders", "Glowing borders" };
+	View *style = controlsSettings->Add(new PopupMultiChoice(&g_Config.iTouchButtonStyle, co->T("Button style"), touchControlStyles, 0, ARRAY_SIZE(touchControlStyles), I18NCat::CONTROLS, screenManager()));
+	style->SetEnabledPtr(&g_Config.bShowTouchControls);
+
+	PopupSliderChoice *opacity = controlsSettings->Add(new PopupSliderChoice(&g_Config.iTouchButtonOpacity, 0, 100, 65, co->T("Button Opacity"), screenManager(), "%"));
+	opacity->SetEnabledPtr(&g_Config.bShowTouchControls);
+	opacity->SetFormat("%i%%");
+	return;
+
+	// GMP Gameport: resto da aba Controles desativado -- não está na lista de
+	// itens que o usuário quer visível (calibração de analógico, tilt,
+	// threshold analógico, gesto, auto-hide, vibração, teclado, mouse,
+	// HID/XInput/DirectInput etc.).
+#if 0
+	auto di = GetI18NCategory(I18NCat::DIALOG);
+
+	int deviceType = System_GetPropertyInt(SYSPROP_DEVICE_TYPE);
+
 	controlsSettings->Add(new Choice(co->T("Calibrate analog stick")))->OnClick.Add([this](UI::EventParams &e) {
 		screenManager()->push(new AnalogCalibrationScreen(gamePath_));
 	});
@@ -837,27 +901,12 @@ void GameSettingsScreen::CreateControlsSettings(UI::ViewGroup *controlsSettings)
 
 	// TVs don't have touch control, at least not yet.
 	if ((deviceType != DEVICE_TYPE_TV) && (deviceType != DEVICE_TYPE_VR)) {
-		controlsSettings->Add(new ItemHeader(co->T("On-screen touch controls")));
-		controlsSettings->Add(new CheckBox(&g_Config.bShowTouchControls, co->T("On-screen touch controls")));
-		Choice *layoutEditorChoice = controlsSettings->Add(new Choice(co->T("Edit touch control layout")));
-		layoutEditorChoice->OnClick.Add([this](UI::EventParams &e) {
-			screenManager()->push(new TouchControlLayoutScreen(gamePath_));
-		});
-		layoutEditorChoice->SetEnabledPtr(&g_Config.bShowTouchControls);
-
 		Choice *gesture = controlsSettings->Add(new Choice(co->T("Gesture mapping")));
 		gesture->OnClick.Add([=](EventParams &e) {
 			screenManager()->push(new GestureMappingScreen(gamePath_));
 		});
 		gesture->SetEnabledPtr(&g_Config.bShowTouchControls);
 
-		static const char *touchControlStyles[] = { "Classic", "Thin borders", "Glowing borders" };
-		View *style = controlsSettings->Add(new PopupMultiChoice(&g_Config.iTouchButtonStyle, co->T("Button style"), touchControlStyles, 0, ARRAY_SIZE(touchControlStyles), I18NCat::CONTROLS, screenManager()));
-		style->SetEnabledPtr(&g_Config.bShowTouchControls);
-
-		PopupSliderChoice *opacity = controlsSettings->Add(new PopupSliderChoice(&g_Config.iTouchButtonOpacity, 0, 100, 65, co->T("Button Opacity"), screenManager(), "%"));
-		opacity->SetEnabledPtr(&g_Config.bShowTouchControls);
-		opacity->SetFormat("%i%%");
 		PopupSliderChoice *autoHide = controlsSettings->Add(new PopupSliderChoice(&g_Config.iTouchButtonHideSeconds, 0, 300, 20, co->T("Auto-hide buttons after delay"), screenManager(), di->T("seconds, 0:off")));
 		autoHide->SetEnabledPtr(&g_Config.bShowTouchControls);
 		autoHide->SetFormat(di->T("%d seconds"));
@@ -937,6 +986,7 @@ void GameSettingsScreen::CreateControlsSettings(UI::ViewGroup *controlsSettings)
 			smoothingSlider->SetLiveUpdate(true);
 		}
 	}
+#endif  // #if 0 -- GMP Gameport: resto da aba Controles desativado, ver comentário no topo da função.
 }
 
 // Compound view just like the audio file choosers
@@ -1153,6 +1203,13 @@ void GameSettingsScreen::CreateSystemSettings(UI::ViewGroup *systemSettings) {
 	auto th = GetI18NCategory(I18NCat::THEMES);
 	auto psps = GetI18NCategory(I18NCat::PSPSETTINGS);  // TODO: Should move more into this section.
 
+	// GMP Gameport: o teclado nativo do sistema fica sempre ligado (pra quem
+	// conecta teclado físico/Bluetooth poder digitar sem o teclado virtual do
+	// PSP por cima), mas sem aparecer como opção aqui -- antes era o checkbox
+	// "Use system native keyboard" (g_Config.bBypassOSKWithKeyboard), que não
+	// está na lista de itens que o usuário quer visível.
+	g_Config.bBypassOSKWithKeyboard = true;
+
 	// GMP Gameport: estas duas categorias ficam completamente ocultas nas
 	// Configurações -- nem o cabeçalho aparece, diferente do que fizemos
 	// antes com Tema/Pasta do cartão de memória (que só ficaram
@@ -1368,7 +1425,32 @@ void GameSettingsScreen::CreateSystemSettings(UI::ViewGroup *systemSettings) {
 	sizeChoice->SetFormat("%d GB");
 	} // kGmpShowMemStickSection
 
-	systemSettings->Add(new ItemHeader(sy->T("Help the PPSSPP team")));
+	// GMP Gameport: liga/desliga o autosave dedicado que preserva o
+	// progresso ao minimizar o app (item 6/7 do prompt original), e um
+	// botão para apagar manualmente o último autosave desse jogo -- pedido
+	// explícito do usuário, separado do controle dos 5 slots normais acima.
+	systemSettings->Add(new CheckBox(&g_Config.bGMPBackgroundAutoSaveEnabled, sy->T("Auto save on minimize")));
+	systemSettings->Add(new SettingHint(sy->T("Automatically saves your progress when you minimize the app, so it can be restored if Android closes it in the background"), nullptr));
+
+	Choice *deleteAutoSave = systemSettings->Add(new Choice(sy->T("Delete last auto save")));
+	deleteAutoSave->OnClick.Add([this, sy, di](UI::EventParams &e) {
+		screenManager()->push(new PromptScreen(gamePath_, sy->T("Delete this game's auto save?"), di->T("Yes"), di->T("No"), [](bool result) {
+			if (result) {
+				EmuScreen::DeleteBackgroundAutoSave();
+			}
+		}));
+	});
+
+	systemSettings->Add(new ItemHeader(sy->T("Cheats", "Cheats")));
+	systemSettings->Add(new CheckBox(&g_Config.bEnableCheats, sy->T("Enable Cheats")));
+	return;
+
+	// GMP Gameport: resto da aba Sistema desativado -- não está na lista de
+	// itens que o usuário quer visível (relatórios de compatibilidade,
+	// emulação, save states normais, "Geral", teclado nativo como checkbox
+	// [agora forçado true no topo da função em vez de mostrado aqui], câmera,
+	// plugins, config. do PSP, gravação de vídeo/áudio).
+#if 0
 	if (!enableReportsSet_)
 		enableReports_ = Reporting::IsEnabled();
 	enableReportsSet_ = true;
@@ -1410,22 +1492,6 @@ void GameSettingsScreen::CreateSystemSettings(UI::ViewGroup *systemSettings) {
 	PopupSliderChoice *rewindInterval = systemSettings->Add(new PopupSliderChoice(&g_Config.iRewindSnapshotInterval, 0, 60, 0, sy->T("Rewind Snapshot Interval"), screenManager(), di->T("seconds, 0:off")));
 	rewindInterval->SetFormat(di->T("%d seconds"));
 	rewindInterval->SetZeroLabel(sy->T("Off"));
-
-	// GMP Gameport: liga/desliga o autosave dedicado que preserva o
-	// progresso ao minimizar o app (item 6/7 do prompt original), e um
-	// botão para apagar manualmente o último autosave desse jogo -- pedido
-	// explícito do usuário, separado do controle dos 5 slots normais acima.
-	systemSettings->Add(new CheckBox(&g_Config.bGMPBackgroundAutoSaveEnabled, sy->T("Auto save on minimize")));
-	systemSettings->Add(new SettingHint(sy->T("Automatically saves your progress when you minimize the app, so it can be restored if Android closes it in the background"), nullptr));
-
-	Choice *deleteAutoSave = systemSettings->Add(new Choice(sy->T("Delete last auto save")));
-	deleteAutoSave->OnClick.Add([this, sy, di](UI::EventParams &e) {
-		screenManager()->push(new PromptScreen(gamePath_, sy->T("Delete this game's auto save?"), di->T("Yes"), di->T("No"), [](bool result) {
-			if (result) {
-				EmuScreen::DeleteBackgroundAutoSave();
-			}
-		}));
-	});
 
 	systemSettings->Add(new ItemHeader(sy->T("General")));
 
@@ -1525,6 +1591,7 @@ void GameSettingsScreen::CreateSystemSettings(UI::ViewGroup *systemSettings) {
 	systemSettings->Add(new CheckBox(&g_Config.bDumpAudio, sy->T("Record Audio")));
 	systemSettings->Add(new CheckBox(&g_Config.bSaveLoadResetsAVdumping, sy->T("Reset Recording on Save/Load State")));
 #endif
+#endif  // #if 0 -- GMP Gameport: resto da aba Sistema desativado, ver comentário mais acima na função.
 }
 
 void GameSettingsScreen::CreateVRSettings(UI::ViewGroup *vrSettings) {
