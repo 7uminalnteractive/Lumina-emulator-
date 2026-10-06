@@ -37,18 +37,57 @@ static const std::vector<std::string> kTheBestPatchCoachHexCodes = {
 	"000000000000000020580ca4",
 };
 
+// GMP Gameport: achamos estes 14 hex codes no www/index.html original do
+// ML-PRO (app Capacitor), para o segundo patch -- lá chamado "mrgamer" /
+// "Brazukas 26". São o equivalente, nesse patch, aos 5 hex codes de
+// "The Best Patch" acima (mesmo slot "técnico de clube", só que com hex
+// codes diferentes porque o layout de texturas do patch é outro).
+//
+// NÃO foi adicionado um LuminaPatchDef pra ele ainda porque o nome de pasta
+// real dentro de Sistema/.TEXTURES no GMP não está confirmado -- o app
+// antigo usava "pastaRelativa: PSP/Textures/MRGAMER", mas esse mesmo campo
+// pra "The Best Patch" dizia "PSP/Textures/LPFL27", que já se mostrou
+// completamente errado pro GMP (o nome real é "THE BEST PATCH", convenção
+// Sistema/.TEXTURES). Então não dá pra confiar em "MRGAMER" por analogia --
+// só adicionamos esse patch na lista de detecção quando o usuário confirmar
+// o nome real da pasta dele no GMP. Hex codes guardados aqui enquanto isso:
+//   097222d02ba18ad320580ca4, 097223002ba18ad320580ca4, 0971fa309245a2a6ecfb38f5,
+//   0971d1d0a039e953515d4ee6, 0971e620fe4a7825ec964817, 09720ec0eba094a559573bfe,
+//   09720eb0eba094a559573bfe, 0971e610fe4a7825ec964817, 09720e80eba094a559573bfe,
+//   097223102ba18ad320580ca4, 0971e5e0fe4a7825ec964817, 0971fa609245a2a6ecfb38f5,
+//   0971d190a039e953515d4ee6, 0971d1c0a039e953515d4ee6
+
 const std::vector<LuminaPatchDef> kLuminaPatches = {
 	{ "the_best_patch", "The Best Patch", "THE BEST PATCH", kTheBestPatchCoachHexCodes },
 };
 
-// GMP Gameport: técnicos confirmados. O caminho da foto é relativo à pasta
-// de texturas do próprio patch (Sistema/.TEXTURES/THE BEST PATCH/...).
-//
-// TODO(preencher com o restante dos 19 técnicos): falta nome + caminho da
-// foto de cada um -- "Fernando Diniz" é o único confirmado até agora (é o
-// valor padrão que já vem nos 5 hex codes acima).
+// GMP Gameport: lista completa dos 19 técnicos (encontrada no www/index.html
+// original do ML-PRO -- array TECNICOS). O caminho da foto é relativo à
+// pasta de texturas do próprio patch (Sistema/.TEXTURES/<patch>/...), e é
+// montado como PREFIXO_TECNICO ("MLPRO/Tecnicos/Técnico de Clube/") + pasta +
+// "/" + foto, igual ao app original -- preservando os nomes de arquivo e
+// acentos exatamente como estavam lá (ex.: pasta "Rogério Ceni" com acento,
+// arquivo "Rogerio Ceni.png" sem acento).
 const std::vector<LuminaTecnicoDef> kLuminaTecnicos = {
-	{ "fernando_diniz", "Fernando Diniz", "MLPRO/Tecnicos/Técnico de Clube/Fernando Diniz/Diniz.png" },
+	{ "abel_ferreira",      "Abel Ferreira",      "MLPRO/Tecnicos/Técnico de Clube/Abel Ferreira/Abel.png" },
+	{ "arthur_jorge",       "Arthur Jorge",        "MLPRO/Tecnicos/Técnico de Clube/Arthur Jorge/Arthur Jorge.png" },
+	{ "cuca",               "Cuca",                "MLPRO/Tecnicos/Técnico de Clube/Cuca/Cuca.png" },
+	{ "dorival_jr",         "Dorival Jr",          "MLPRO/Tecnicos/Técnico de Clube/Dorival Jr/Dorival.png" },
+	{ "eduardo_dominguez",  "Eduardo Dominguez",   "MLPRO/Tecnicos/Técnico de Clube/Eduardo Dominguez/Eduardo Dominguez.png" },
+	{ "f_carvalho",         "F.Carvalho",          "MLPRO/Tecnicos/Técnico de Clube/F.Carvalho/F.Carvalho.png" },
+	{ "fernando_diniz",     "Fernando Diniz",      "MLPRO/Tecnicos/Técnico de Clube/Fernando Diniz/Diniz.png" },
+	{ "fernando_seabra",    "Fernando Seabra",     "MLPRO/Tecnicos/Técnico de Clube/Fernando Seabra/Seabra.png" },
+	{ "jair_ventura",       "Jair Ventura",        "MLPRO/Tecnicos/Técnico de Clube/Jair Ventura/Jair Ventura.png" },
+	{ "luis_castro",        "Luís Castro",         "MLPRO/Tecnicos/Técnico de Clube/Luís Castro/Luis Castro.png" },
+	{ "luis_zubeldia",      "Luís Zubeldia",       "MLPRO/Tecnicos/Técnico de Clube/Luís Zubeldia/Zubeldia.png" },
+	{ "leo_jardim",         "Léo Jardim",          "MLPRO/Tecnicos/Técnico de Clube/Léo Jardim/Leonardo Jardim.png" },
+	{ "odair_hellmann",     "Odair Hellmann",      "MLPRO/Tecnicos/Técnico de Clube/Odair Hellmann/Odair.png" },
+	{ "paulo_pezzolano",    "Paulo Pezzolano",     "MLPRO/Tecnicos/Técnico de Clube/Paulo Pezzolano/Paulo.png" },
+	{ "pedro_emanuel",      "Pedro Emanuel",       "MLPRO/Tecnicos/Técnico de Clube/Pedro Emanuel/Pedro Emanuel.png" },
+	{ "rafael_guanaes",     "Rafael Guanaes",      "MLPRO/Tecnicos/Técnico de Clube/Rafael Guanaes/Guanaes.png" },
+	{ "rafael_lacerda",     "Rafael Lacerda",      "MLPRO/Tecnicos/Técnico de Clube/Rafael Lacerda/Rafael Lacerda.png" },
+	{ "rogerio_ceni",       "Rogério Ceni",        "MLPRO/Tecnicos/Técnico de Clube/Rogério Ceni/Rogerio Ceni.png" },
+	{ "vagner_mancini",     "Vagner Mancini",      "MLPRO/Tecnicos/Técnico de Clube/Vagner Mancini/Vagner Mancini.png" },
 };
 
 static bool EqualsNoCase(const std::string &a, const std::string &b) {
