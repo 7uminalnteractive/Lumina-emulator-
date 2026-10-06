@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cctype>
 
+#include "Common/File/DirListing.h"
 #include "Common/File/FileUtil.h"
 #include "Common/Log.h"
 #include "Core/Config.h"
@@ -16,6 +17,74 @@
 // na mão em vez de usar GetSysDirectory(DIRECTORY_TEXTURES).
 static Path GmpTexturesRoot() {
 	return g_Config.memStickDirectory / "Sistema" / ".TEXTURES";
+}
+
+static bool EqualsNoCase(const std::string &a, const std::string &b) {
+	if (a.size() != b.size())
+		return false;
+	for (size_t i = 0; i < a.size(); i++) {
+		if (std::tolower((unsigned char)a[i]) != std::tolower((unsigned char)b[i]))
+			return false;
+	}
+	return true;
+}
+
+// GMP Gameport: o armazenamento interno do Android normalmente é case-sensitive
+// (diferente do Windows), então "THE BEST PATCH" vs "The Best Patch" vs
+// "the best patch" são pastas DIFERENTES para o File::Exists() de baixo nível,
+// mesmo que pareçam "a mesma coisa" pro usuário. Pra não depender de bater a
+// grafia exata (maiúsculas, espaçamento) de cada pasta, resolvemos cada nível
+// do caminho procurando, dentro do diretório pai, um item cujo nome bate
+// ignorando caixa -- e usamos o nome REAL encontrado em disco pra montar o
+// próximo passo. GETFILES_GETHIDDEN é necessário pra listar ".TEXTURES" (nome
+// começando com ponto é tratado como oculto por padrão).
+//
+// Retorna o Path resolvido com a grafia real, ou um Path vazio (checar com
+// resolved.empty() equivalente -- aqui usamos *found) se não encontrou nada
+// parecido dentro do diretório pai.
+static Path ResolveChildCaseInsensitive(const Path &parentDir, const std::string &wantedName, bool *found) {
+	*found = false;
+	std::vector<File::FileInfo> files;
+	if (!File::GetFilesInDir(parentDir, &files, nullptr, File::GETFILES_GETHIDDEN)) {
+		WARN_LOG(Log::System, "Lumina/ML-PRO: não consegui listar '%s' (pasta não existe ou sem permissão?)", parentDir.c_str());
+		return Path();
+	}
+	for (const File::FileInfo &f : files) {
+		if (EqualsNoCase(f.name, wantedName)) {
+			*found = true;
+			return f.fullName;
+		}
+	}
+	WARN_LOG(Log::System, "Lumina/ML-PRO: '%s' não encontrado dentro de '%s'", wantedName.c_str(), parentDir.c_str());
+	return Path();
+}
+
+// Resolve <memStickDirectory>/Sistema/.TEXTURES/<texturesSubdir>/texture.ini
+// percorrendo nível por nível com ResolveChildCaseInsensitive, pra tolerar
+// diferenças de maiúsculas/minúsculas em qualquer uma das pastas reais do
+// usuário. Se algum nível não existir, retorna um Path vazio -- os logs de
+// WARN_LOG acima dizem exatamente em qual nível a busca parou, o que ajuda a
+// diagnosticar se o problema é o nome da pasta ou outra coisa (ex. permissão).
+static Path ResolvePatchIniPath(const LuminaPatchDef &patch) {
+	bool found = false;
+
+	Path sistemaDir = ResolveChildCaseInsensitive(g_Config.memStickDirectory, "Sistema", &found);
+	if (!found)
+		return Path();
+
+	Path texturesDir = ResolveChildCaseInsensitive(sistemaDir, ".TEXTURES", &found);
+	if (!found)
+		return Path();
+
+	Path patchDir = ResolveChildCaseInsensitive(texturesDir, patch.texturesSubdir, &found);
+	if (!found)
+		return Path();
+
+	Path iniPath = ResolveChildCaseInsensitive(patchDir, "texture.ini", &found);
+	if (!found)
+		return Path();
+
+	return iniPath;
 }
 
 // GMP Gameport: hex codes reais do slot "técnico de clube" no texture.ini de
@@ -90,22 +159,11 @@ const std::vector<LuminaTecnicoDef> kLuminaTecnicos = {
 	{ "vagner_mancini",     "Vagner Mancini",      "MLPRO/Tecnicos/Técnico de Clube/Vagner Mancini/Vagner Mancini.png" },
 };
 
-static bool EqualsNoCase(const std::string &a, const std::string &b) {
-	if (a.size() != b.size())
-		return false;
-	for (size_t i = 0; i < a.size(); i++) {
-		if (std::tolower((unsigned char)a[i]) != std::tolower((unsigned char)b[i]))
-			return false;
-	}
-	return true;
-}
-
 int LuminaDetectInstalledPatch() {
-	const Path texturesRoot = GmpTexturesRoot();
 	for (size_t i = 0; i < kLuminaPatches.size(); i++) {
 		const LuminaPatchDef &patch = kLuminaPatches[i];
-		const Path iniPath = texturesRoot / patch.texturesSubdir / "texture.ini";
-		if (File::Exists(iniPath)) {
+		const Path iniPath = ResolvePatchIniPath(patch);
+		if (!iniPath.empty()) {
 			INFO_LOG(Log::System, "Lumina/ML-PRO: patch detectado: %s (%s)", patch.displayName.c_str(), iniPath.c_str());
 			return (int)i;
 		}
@@ -114,7 +172,14 @@ int LuminaDetectInstalledPatch() {
 }
 
 bool LuminaApplyTecnico(const LuminaPatchDef &patch, const LuminaTecnicoDef &tecnico, std::string *errorStr) {
-	const Path iniPath = GmpTexturesRoot() / patch.texturesSubdir / "texture.ini";
+	const Path iniPath = ResolvePatchIniPath(patch);
+	if (iniPath.empty()) {
+		// GMP Gameport: não achamos o texture.ini desse patch nem com a busca
+		// tolerante a maiúsculas/minúsculas -- os WARN_LOG de ResolveChildCaseInsensitive
+		// (ver logcat) dizem exatamente em qual nível da pasta a busca parou.
+		*errorStr = "Não encontrei o texture.ini desse patch no cartão de memória (verifique se o patch ainda está instalado).";
+		return false;
+	}
 
 	std::string contents;
 	if (!File::ReadTextFileToString(iniPath, &contents)) {
