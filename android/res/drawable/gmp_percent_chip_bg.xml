@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GMP Gameport: chip em pílula atrás de "XX%" no Instalador, pra imitar o
+     selo "Uploading 74%" das referências, em vez do texto solto que havia
+     antes. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/lumina_blue_dim" />
+    <corners android:radius="20dp" />
+</shape>

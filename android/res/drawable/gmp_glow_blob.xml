@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GMP Gameport: mancha de luz verde usada atras dos cards com brilho
+     (instalador, por enquanto). Um oval com gradiente radial que desbota
+     pra transparente nas bordas, posicionado com margens negativas no
+     layer-list pra vazar um pouco por cima do card, como nas referencias
+     de upload que o usuario mandou. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:type="radial"
+        android:gradientRadius="200dp"
+        android:startColor="#669AE637"
+        android:centerColor="#339AE637"
+        android:endColor="#009AE637" />
+</shape>

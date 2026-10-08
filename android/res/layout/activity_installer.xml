@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- GMP Gameport: tela do Instalador. Aberta pela Biblioteca ao tocar em "Baixar". -->
+<!-- GMP Gameport: tela do Instalador. Aberta pela Biblioteca ao tocar em "Baixar".
+     Redesenhada como um "card com brilho" (ver gmp_installer_card_bg.xml),
+     no estilo das referências de upload que o usuário mandou: chip de
+     ícone no topo, barra de progresso em pílula e selo de porcentagem, em
+     vez do bloco de texto + barra fina que havia antes. Todos os IDs
+     continuam os mesmos, então InstallerActivity.java não precisa mudar. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/installer_root"
     android:layout_width="match_parent"
@@ -11,24 +16,41 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:background="@drawable/gmp_installer_card_bg"
+        android:paddingLeft="28dp"
+        android:paddingRight="28dp"
+        android:paddingTop="64dp"
+        android:paddingBottom="28dp">
+
+        <ImageView
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/gmp_icon_chip_bg"
+            android:padding="14dp"
+            android:src="@drawable/ic_nav_download"
+            android:tint="@color/lumina_blue"
+            android:contentDescription="@null" />
 
         <TextView
             android:id="@+id/installer_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
             android:fontFamily="sans-serif-condensed"
+            android:gravity="center"
             android:maxLines="2"
             android:ellipsize="end"
             android:textColor="@color/lumina_text"
-            android:textSize="24sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/installer_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
             android:textColor="@color/lumina_muted"
             android:textSize="14sp" />
 
@@ -36,27 +58,37 @@
             android:id="@+id/installer_progress"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:layout_marginTop="18dp"
+            android:layout_height="14dp"
+            android:layout_marginTop="22dp"
             android:indeterminate="true"
             android:max="1000"
-            android:progressTint="@color/lumina_blue"
+            android:progressDrawable="@drawable/gmp_installer_progress"
             android:indeterminateTint="@color/lumina_blue" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/installer_percent"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="@color/lumina_text"
+                android:background="@drawable/gmp_percent_chip_bg"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:textColor="@color/lumina_blue"
                 android:textSize="13sp"
                 android:textStyle="bold" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
 
             <TextView
                 android:id="@+id/installer_bytes"

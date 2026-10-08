@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GMP Gameport: preenchimento (progress) da barra em formato pilula do
+     Instalador, usado como android:id="@android:id/progress" dentro de
+     gmp_installer_progress.xml, envolvido num scale (padrao do Android
+     pra progressDrawable). Mesmo gradiente do botao primario, pra manter
+     a identidade visual. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="7dp" />
+    <gradient
+        android:type="linear"
+        android:angle="0"
+        android:startColor="#ABEF4A"
+        android:endColor="@color/lumina_blue" />
+</shape>

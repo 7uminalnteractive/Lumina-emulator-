@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GMP Gameport: progressDrawable customizado pra deixar a barra do
+     Instalador em formato pílula (trilho + preenchimento arredondados), no
+     lugar do ?android:attr/progressBarStyleHorizontal padrão (um fio reto
+     sem nenhuma presença visual). Estrutura padrão do Android: o item com
+     id "background" é o trilho, o item com id "progress" (envolto num
+     <scale>) é o preenchimento, cuja largura o ProgressBar ajusta sozinho
+     conforme o valor de setProgress(). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background"
+        android:drawable="@drawable/gmp_progress_track_bg" />
+    <item android:id="@android:id/progress">
+        <scale android:scaleWidth="100%" android:drawable="@drawable/gmp_progress_fill_bg" />
+    </item>
+</layer-list>
