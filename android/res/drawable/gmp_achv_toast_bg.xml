@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GMP Gameport: fundo do card de notificacao de conquista desbloqueada
+     (AchievementNotifier / view_achievement_toast.xml). Mesma linguagem
+     visual do card do Instalador (gmp_installer_card_bg.xml), mas sem o
+     brilho por cima, pois aqui o card e pequeno e fica sobreposto a tela
+     atual, entao um brilho vazando ficaria estranho. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/lumina_bg2" />
+    <corners android:radius="18dp" />
+    <stroke android:width="1dp" android:color="@color/lumina_border" />
+</shape>
