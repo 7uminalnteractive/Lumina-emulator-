@@ -111,6 +111,17 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 
 	private View navigationCallbackView = null;
 
+	// GMP Gameport: sistema de conquistas -- soma o tempo que o app ficou em
+	// primeiro plano (entre onResume() e onPause()) como "horas de jogo" do
+	// usuario logado. E uma aproximacao (conta o tempo com o app aberto, nao
+	// so o tempo com o jogo de fato rodando), mas e o ponto mais simples e
+	// confiavel pra medir isso sem mexer no C++ (EmuScreen) via JNI. Quando
+	// o usuario nao esta logado via Supabase (so conta local, sem
+	// access_token salvo), simplesmente nao manda nada -- nao trava o jogo.
+	private static final long GMP_MIN_PLAY_SECONDS_TO_REPORT = 5;
+	private long gmpSessionStartMs = 0;
+	private AchievementsClient gmpAchievementsClient;
+
 	// audioFocusChangeListener to listen to changes in audio state
 	private AudioFocusChangeListener audioFocusChangeListener;
 	private AudioManager audioManager;
@@ -450,15 +461,9 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		// antes do jogo rodar.
 		AccountStore accountStore = new AccountStore(this);
 		LocalAccount activeAccount = accountStore.getActiveAccount();
-		if (activeAccount != null && activeAccount.playerId() != null && !activeAccount.playerId().isEmpty()) {
-			// GMP Gameport: usa o ID de jogador derivado do Supabase (não o
-			// nome de exibição) -- o "Apelido" não é mais algo que o usuário
-			// escolhe, ver LocalAccount.playerId().
-			NativeApp.syncNicknameFromAccount(activeAccount.playerId());
+		if (activeAccount != null && activeAccount.displayName != null && !activeAccount.displayName.trim().isEmpty()) {
+			NativeApp.syncNicknameFromAccount(activeAccount.displayName.trim());
 		}
-		// GMP Gameport: mesma ideia, mas para o tema escolhido em "Minha
-		// conta > Trocar tema" (ver GmpThemePrefs).
-		NativeApp.setThemeName(GmpThemePrefs.getSavedThemeName(this));
 
 		// Initialize audio classes. Do this here since detectOptimalAudioSettings()
 		// needs audioManager
@@ -1168,7 +1173,57 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		if (mCameraHelper != null) {
 			mCameraHelper.pause();
 		}
+
+		gmpReportPlayTime();
+
 		Log.i(TAG, "onPause end");
+	}
+
+	/**
+	 * GMP Gameport: fecha o pedaco de tempo jogado desde o ultimo onResume()
+	 * e manda pro sistema de conquistas (ver AchievementsClient/
+	 * AchievementNotifier). Chamado em onPause(); silencioso se o usuario
+	 * nao estiver logado via Supabase ou se o pedaco for curto demais pra
+	 * valer a pena (ex: notificacao puxada rapido).
+	 */
+	private void gmpReportPlayTime() {
+		if (gmpSessionStartMs == 0) {
+			return;
+		}
+		long elapsedSeconds = (System.currentTimeMillis() - gmpSessionStartMs) / 1000;
+		gmpSessionStartMs = 0;
+		if (elapsedSeconds < GMP_MIN_PLAY_SECONDS_TO_REPORT) {
+			return;
+		}
+
+		String accessToken = new SessionManager(this).getAccessToken();
+		if (accessToken == null) {
+			// Conta só local (sem login Supabase ainda) -- sem conquistas pra essa sessão.
+			return;
+		}
+
+		if (gmpAchievementsClient == null) {
+			gmpAchievementsClient = new AchievementsClient();
+		}
+
+		final Activity activityForNotification = this;
+		final String tokenForNotification = accessToken;
+		gmpAchievementsClient.recordPlayTime(accessToken, (int) elapsedSeconds,
+				new AchievementsClient.AchievementsCallback() {
+					@Override
+					public void onSuccess(java.util.List<AchievementsClient.Achievement> unlocked) {
+						if (unlocked.isEmpty() || activityForNotification.isFinishing()) {
+							return;
+						}
+						AchievementNotifier.showAll(activityForNotification, gmpAchievementsClient,
+								tokenForNotification, unlocked);
+					}
+
+					@Override
+					public void onError(String message) {
+						Log.w(TAG, "GMP Gameport: falha ao registrar tempo de jogo: " + message);
+					}
+				});
 	}
 
 	@Override
@@ -1182,15 +1237,11 @@ public class PpssppActivity extends AppCompatActivity implements SensorEventList
 		// toda vez que esta Activity volta ao topo, inclusive nesse caso.
 		AccountStore accountStore = new AccountStore(this);
 		LocalAccount activeAccount = accountStore.getActiveAccount();
-		if (activeAccount != null && activeAccount.playerId() != null && !activeAccount.playerId().isEmpty()) {
-			// GMP Gameport: usa o ID de jogador derivado do Supabase (não o
-			// nome de exibição) -- o "Apelido" não é mais algo que o usuário
-			// escolhe, ver LocalAccount.playerId().
-			NativeApp.syncNicknameFromAccount(activeAccount.playerId());
+		if (activeAccount != null && activeAccount.displayName != null && !activeAccount.displayName.trim().isEmpty()) {
+			NativeApp.syncNicknameFromAccount(activeAccount.displayName.trim());
 		}
-		// GMP Gameport: mesma ideia, mas para o tema escolhido em "Minha
-		// conta > Trocar tema" (ver GmpThemePrefs).
-		NativeApp.setThemeName(GmpThemePrefs.getSavedThemeName(this));
+
+		gmpSessionStartMs = System.currentTimeMillis();
 
 		updateSustainedPerformanceMode();
 		sizeManager.onResume();
