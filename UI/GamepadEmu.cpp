@@ -537,8 +537,28 @@ void PSPDpad::Draw(UIContext &dc) {
 		uint32_t color = colorAlpha(0xFFFFFF, imgOpacity);
 
 		dc.Draw()->DrawImageRotated(arrowIndex_, x, y, imgScale, angle + PI, colorBg, false);
-		if (overlayIndex_.isValid())
+
+		// GMP Gameport: se um icone customizado foi definido pra essa direcao
+		// (ver SetCustomGlyphFiles(), chamado em GamepadEmuView::GamepadEmuView),
+		// desenha a imagem solta JA pre-rotacionada no lugar do overlayIndex_
+		// do atlas -- sem rotacionar nada em tempo real, porque DrawTexRect
+		// nao suporta angulo (ver MultiTouchButton::Draw pro mesmo padrao
+		// usado nos botoes de acao). i=0..3 segue a mesma ordem direita/
+		// baixo/esquerda/cima usada acima em xoff/yoff/angle.
+		Draw::Texture *customGlyph = customGlyphVfsPaths_[i] ? GmpGetCustomGlyphTexture(dc, customGlyphVfsPaths_[i]) : nullptr;
+		if (customGlyph) {
+			const AtlasImage *origGlyph = overlayIndex_.isValid() ? dc.Draw()->GetAtlas()->getImage(overlayIndex_) : nullptr;
+			float glyphW = (origGlyph ? origGlyph->w : 20.0f) * imgScale;
+			float glyphH = (origGlyph ? origGlyph->h : 20.0f) * imgScale;
+			dc.Flush();
+			dc.Begin();
+			dc.GetDrawContext()->BindTexture(0, customGlyph);
+			dc.Draw()->DrawTexRect(x2 - glyphW * 0.5f, y2 - glyphH * 0.5f, x2 + glyphW * 0.5f, y2 + glyphH * 0.5f, 0, 0, 1, 1, color);
+			dc.Flush();
+			dc.RebindTexture();
+		} else if (overlayIndex_.isValid()) {
 			dc.Draw()->DrawImageRotated(overlayIndex_, x2, y2, imgScale, angle + PI, color);
+		}
 	}
 }
 
@@ -1117,8 +1137,12 @@ GamepadEmuView::GamepadEmuView(const TouchControlConfig &config, float xres, flo
 			b->SetCustomGlyphFile("ui_images/ic_btn_g.png");
 	}
 
-	addPSPButton(CTRL_START, "Start button", rectImage, ImageID("I_RECT"), ImageID("I_START"), config.touchStartKey);
-	addPSPButton(CTRL_SELECT, "Select button", rectImage, ImageID("I_RECT"), ImageID("I_SELECT"), config.touchSelectKey);
+	// GMP Gameport: Start/Select tambem ganham icone customizado, mesmo
+	// esquema dos 4 botoes de acao (ver comentario mais acima).
+	if (PSPButton *b = addPSPButton(CTRL_START, "Start button", rectImage, ImageID("I_RECT"), ImageID("I_START"), config.touchStartKey))
+		b->SetCustomGlyphFile("ui_images/ic_btn_start.png");
+	if (PSPButton *b = addPSPButton(CTRL_SELECT, "Select button", rectImage, ImageID("I_RECT"), ImageID("I_SELECT"), config.touchSelectKey))
+		b->SetCustomGlyphFile("ui_images/ic_btn_select.png");
 
 	BoolButton *fastForward = addBoolButton(&PSP_CoreParameter().fastForward, "Fast-forward button", rectImage, ImageID("I_RECT"), ImageID("I_FAST_FORWARD_LINE"), config.touchFastForwardKey);
 	if (fastForward) {
@@ -1129,14 +1153,25 @@ GamepadEmuView::GamepadEmuView(const TouchControlConfig &config, float xres, flo
 		});
 	}
 
-	addPSPButton(CTRL_LTRIGGER, "Left shoulder button", shoulderImage, ImageID("I_SHOULDER"), ImageID("I_L"), config.touchLKey);
+	// GMP Gameport: L/R tambem ganham icone customizado (continuam sendo as
+	// letras L/R, so com o visual do novo conjunto, ja que sao os unicos
+	// nomes que fazem sentido pra identificar qual ombro e qual).
+	if (PSPButton *b = addPSPButton(CTRL_LTRIGGER, "Left shoulder button", shoulderImage, ImageID("I_SHOULDER"), ImageID("I_L"), config.touchLKey))
+		b->SetCustomGlyphFile("ui_images/ic_btn_l.png");
 	PSPButton *rTrigger = addPSPButton(CTRL_RTRIGGER, "Right shoulder button", shoulderImage, ImageID("I_SHOULDER"), ImageID("I_R"), config.touchRKey);
-	if (rTrigger)
+	if (rTrigger) {
 		rTrigger->FlipImageH(true);
+		rTrigger->SetCustomGlyphFile("ui_images/ic_btn_r.png");
+	}
 
 	if (config.touchDpad.show) {
 		const ImageID dirImage = g_Config.iTouchButtonStyle ? ImageID("I_DIR_LINE") : ImageID("I_DIR");
-		Add(new PSPDpad(dirImage, "D-pad", ImageID("I_DIR"), ImageID("I_ARROW"), config.touchDpad.scale, config.fDpadSpacing, buttonLayoutParams(config.touchDpad)));
+		PSPDpad *dpad = new PSPDpad(dirImage, "D-pad", ImageID("I_DIR"), ImageID("I_ARROW"), config.touchDpad.scale, config.fDpadSpacing, buttonLayoutParams(config.touchDpad));
+		// GMP Gameport: setas customizadas, pre-rotacionadas (ver comentario
+		// em SetCustomGlyphFiles() em GamepadEmu.h).
+		dpad->SetCustomGlyphFiles("ui_images/ic_btn_dpad_right.png", "ui_images/ic_btn_dpad_down.png",
+			"ui_images/ic_btn_dpad_left.png", "ui_images/ic_btn_dpad_up.png");
+		Add(dpad);
 	}
 
 	if (config.touchAnalogStick.show)

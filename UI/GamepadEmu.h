@@ -133,10 +133,25 @@ public:
 	void GetContentDimensions(const UIContext &dc, float &w, float &h) const override;
 	bool IsDownByTouch() const override { return down_ != 0; }
 
+	// GMP Gameport: troca as 4 setas (o glifo desenhado por cima do corpo do
+	// botao, equivalente a overlayIndex_) por 4 imagens soltas pre-rotacionadas
+	// de ui_images/ -- uma por direcao (direita/baixo/esquerda/cima, na ordem
+	// que PSPDpad::Draw ja usa internamente pro indice i=0..3). Pre-rotacionadas
+	// porque o caminho de textura solta (DrawTexRect) nao suporta rotacao em
+	// tempo real, diferente do overlayIndex_ original (DrawImageRotated). Se
+	// os 4 arquivos nao existirem, cai de volta pro overlayIndex_ padrao.
+	void SetCustomGlyphFiles(const char *right, const char *down, const char *left, const char *up) {
+		customGlyphVfsPaths_[0] = right;
+		customGlyphVfsPaths_[1] = down;
+		customGlyphVfsPaths_[2] = left;
+		customGlyphVfsPaths_[3] = up;
+	}
+
 private:
 	void ProcessTouch(float x, float y, bool down, bool ignorePress);
 	ImageID arrowIndex_;
 	ImageID arrowDownIndex_;
+	const char *customGlyphVfsPaths_[4] = { nullptr, nullptr, nullptr, nullptr };
 	ImageID overlayIndex_;
 
 	float scale_;
