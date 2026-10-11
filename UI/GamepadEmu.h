@@ -69,6 +69,17 @@ public:
 	MultiTouchButton *SetAngle(float angle) { angle_ = angle; bgAngle_ = angle; return this; }
 	MultiTouchButton *SetAngle(float angle, float bgAngle) { angle_ = angle; bgAngle_ = bgAngle; return this; }
 
+	// GMP Gameport: troca o glifo do botao (o simbolo desenhado por cima do
+	// fundo redondo/retangular) por uma imagem solta de ui_images/<arquivo>,
+	// em vez do icone baked no atlas (I_TRIANGLE, I_SQUARE, etc.). O fundo do
+	// botao (bgImg_) nao muda, so o simbolo. Carregamento e preguicoso -- so
+	// acontece no primeiro Draw() depois de chamar isso, quando ja existe um
+	// UIContext/DrawContext disponivel (no construtor de GamepadEmuView
+	// ainda nao tem). Se o arquivo nao existir em ui_images/, continua
+	// mostrando o icone original do atlas (img_), sem quebrar nada. Ver
+	// GmpGetCustomGlyphTexture() em GamepadEmu.cpp.
+	MultiTouchButton *SetCustomGlyphFile(const char *vfsPath) { customGlyphVfsPath_ = vfsPath; return this; }
+
 	bool CanGlide() const;
 	void SetMinimumAlpha(float minAlpha) { minimumAlpha_ = minAlpha; }
 
@@ -84,6 +95,7 @@ private:
 	float angle_ = 0.0f;
 	bool flipImageH_ = false;
 	float minimumAlpha_ = 0.0f;
+	const char *customGlyphVfsPath_ = nullptr;
 };
 
 class BoolButton : public MultiTouchButton {

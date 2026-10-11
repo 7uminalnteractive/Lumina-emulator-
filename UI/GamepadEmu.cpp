@@ -16,12 +16,15 @@
 // https://github.com/hrydgard/ppsspp and http://www.ppsspp.org/.
 
 #include <algorithm>
+#include <unordered_map>
+#include <string>
 
 #include "Common/Data/Color/RGBAUtil.h"
 #include "Common/Data/Text/I18n.h"
 #include "Common/System/Display.h"
 #include "Common/System/System.h"
 #include "Common/Render/TextureAtlas.h"
+#include "Common/Render/ManagedTexture.h"
 #include "Common/Math/math_util.h"
 #include "Common/UI/Context.h"
 
@@ -171,6 +174,29 @@ bool MultiTouchButton::Touch(const TouchInput &input) {
 	return retval;
 }
 
+// GMP Gameport: cache dos icones customizados dos botoes de acao (estrela/
+// G/losango/espiral no lugar de triangulo/quadrado/circulo/cross -- pedido
+// do usuario). Cada arquivo e carregado uma unica vez (preguicosamente, no
+// primeiro Draw() que precisar dele) e reaproveitado por todos os botoes;
+// nunca sao liberados individualmente (igual ao bgTexture de Background.cpp),
+// soh ficam vivos ate o processo encerrar. Se o arquivo nao existir em
+// ui_images/, guarda nullptr no cache pra nao ficar tentando de novo a cada
+// frame, e o botao cai de volta pro icone original do atlas.
+static std::unordered_map<std::string, Draw::Texture *> g_gmpCustomGlyphCache;
+
+static Draw::Texture *GmpGetCustomGlyphTexture(UIContext &dc, const char *vfsPath) {
+	auto it = g_gmpCustomGlyphCache.find(vfsPath);
+	if (it != g_gmpCustomGlyphCache.end()) {
+		return it->second;
+	}
+	Draw::Texture *tex = CreateTextureFromFile(dc.GetDrawContext(), vfsPath, ImageFileType::DETECT, true);
+	if (!tex) {
+		WARN_LOG(Log::System, "Lumina/GMP: icone customizado '%s' nao encontrado em ui_images/, usando o icone padrao.", vfsPath);
+	}
+	g_gmpCustomGlyphCache[vfsPath] = tex;
+	return tex;
+}
+
 void MultiTouchButton::Draw(UIContext &dc) {
 	float opacity = std::max(g_gamepadOpacity, minimumAlpha_);
 	if (opacity <= 0.0f)
@@ -205,7 +231,29 @@ void MultiTouchButton::Draw(UIContext &dc) {
 		y -= 2.8f * scale;
 	if (img_ == ImageID("I_FAST_FORWARD_LINE"))
 		x += 2.0f * scale;
-	dc.Draw()->DrawImageRotated(img_, x, y, scale, angle_ * (M_PI * 2 / 360.0f), color);
+
+	Draw::Texture *customGlyph = customGlyphVfsPath_ ? GmpGetCustomGlyphTexture(dc, customGlyphVfsPath_) : nullptr;
+	if (customGlyph) {
+		// GMP Gameport: desenha a textura solta no lugar do glifo do atlas.
+		// Usa o tamanho nativo do glifo ORIGINAL (img_) no atlas como
+		// referencia pra caixa do icone, so pra manter o mesmo "peso" visual
+		// que o icone padrao tinha nesse botao -- a imagem customizada em si
+		// pode ter qualquer resolucao, ela so preenche essa caixa. Mesmo
+		// padrao Flush/Begin/BindTexture/Flush/RebindTexture usado em
+		// DrawBackground() (Background.cpp) pra desenhar uma textura solta
+		// no meio de um lote de sprites do atlas.
+		const AtlasImage *origGlyph = dc.Draw()->GetAtlas()->getImage(img_);
+		float glyphW = (origGlyph ? origGlyph->w : 36.0f) * scale;
+		float glyphH = (origGlyph ? origGlyph->h : 36.0f) * scale;
+		dc.Flush();
+		dc.Begin();
+		dc.GetDrawContext()->BindTexture(0, customGlyph);
+		dc.Draw()->DrawTexRect(x - glyphW * 0.5f, y - glyphH * 0.5f, x + glyphW * 0.5f, y + glyphH * 0.5f, 0, 0, 1, 1, color);
+		dc.Flush();
+		dc.RebindTexture();
+	} else {
+		dc.Draw()->DrawImageRotated(img_, x, y, scale, angle_ * (M_PI * 2 / 360.0f), color);
+	}
 }
 
 bool BoolButton::Touch(const TouchInput &input) {
@@ -1044,14 +1092,30 @@ GamepadEmuView::GamepadEmuView(const TouchControlConfig &config, float xres, flo
 	}
 
 	// touchActionButtonCenter.show will always be true, since that's the default.
-	if (config.bShowTouchCircle)
-		addPSPButton(CTRL_CIRCLE, "Circle button", roundImage, ImageID("I_ROUND"), ImageID("I_CIRCLE"), config.touchActionButtonCenter, circleOffset);
-	if (config.bShowTouchCross)
-		addPSPButton(CTRL_CROSS, "Cross button", roundImage, ImageID("I_ROUND"), ImageID("I_CROSS"), config.touchActionButtonCenter, crossOffset);
-	if (config.bShowTouchTriangle)
-		addPSPButton(CTRL_TRIANGLE, "Triangle button", roundImage, ImageID("I_ROUND"), ImageID("I_TRIANGLE"), config.touchActionButtonCenter, triangleOffset);
-	if (config.bShowTouchSquare)
-		addPSPButton(CTRL_SQUARE, "Square button", roundImage, ImageID("I_ROUND"), ImageID("I_SQUARE"), config.touchActionButtonCenter, squareOffset);
+	// GMP Gameport: os 4 botoes de acao ganham um icone customizado (textura
+	// solta de ui_images/, ver SetCustomGlyphFile() em GamepadEmu.h) no lugar
+	// do triangulo/quadrado/circulo/cross padrao do PSP -- pedido do
+	// usuario, puramente visual (o botao continua mapeado pro mesmo botao
+	// do PSP, CTRL_CIRCLE/CTRL_CROSS/CTRL_TRIANGLE/CTRL_SQUARE). Mapeamento
+	// usado (mesma ordem que o usuario pediu: Triangulo/Quadrado/Circulo/
+	// Cross -> estrela/G/losango/espiral):
+	//   Triangulo -> estrela, Quadrado -> G, Circulo -> losango, Cross -> espiral.
+	if (config.bShowTouchCircle) {
+		if (PSPButton *b = addPSPButton(CTRL_CIRCLE, "Circle button", roundImage, ImageID("I_ROUND"), ImageID("I_CIRCLE"), config.touchActionButtonCenter, circleOffset))
+			b->SetCustomGlyphFile("ui_images/ic_btn_diamond.png");
+	}
+	if (config.bShowTouchCross) {
+		if (PSPButton *b = addPSPButton(CTRL_CROSS, "Cross button", roundImage, ImageID("I_ROUND"), ImageID("I_CROSS"), config.touchActionButtonCenter, crossOffset))
+			b->SetCustomGlyphFile("ui_images/ic_btn_spiral.png");
+	}
+	if (config.bShowTouchTriangle) {
+		if (PSPButton *b = addPSPButton(CTRL_TRIANGLE, "Triangle button", roundImage, ImageID("I_ROUND"), ImageID("I_TRIANGLE"), config.touchActionButtonCenter, triangleOffset))
+			b->SetCustomGlyphFile("ui_images/ic_btn_star.png");
+	}
+	if (config.bShowTouchSquare) {
+		if (PSPButton *b = addPSPButton(CTRL_SQUARE, "Square button", roundImage, ImageID("I_ROUND"), ImageID("I_SQUARE"), config.touchActionButtonCenter, squareOffset))
+			b->SetCustomGlyphFile("ui_images/ic_btn_g.png");
+	}
 
 	addPSPButton(CTRL_START, "Start button", rectImage, ImageID("I_RECT"), ImageID("I_START"), config.touchStartKey);
 	addPSPButton(CTRL_SELECT, "Select button", rectImage, ImageID("I_RECT"), ImageID("I_SELECT"), config.touchSelectKey);
