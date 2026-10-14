@@ -90,7 +90,13 @@ float GamepadGetOpacity() {
 }
 
 static u32 GetButtonColor() {
-	return g_Config.iTouchButtonStyle != 0 ? 0xFFFFFF : 0xc0b080;
+	// GMP Gameport: a cor "Classic" (estilo preenchido, iTouchButtonStyle==0)
+	// era um bege/caqui (0xc0b080) que não combina com a marca -- trocado
+	// pra um preto quase puro, igual ao da foto de referência que o usuário
+	// mandou (botões pretos solidos com o icone branco por cima). O estilo
+	// "Thin/Glowing borders" (1/2) continua branco (0xFFFFFF), já que ali é
+	// só o contorno, não o preenchimento.
+	return g_Config.iTouchButtonStyle != 0 ? 0xFFFFFF : 0x1A1A1A;
 }
 
 GamepadComponent::GamepadComponent(std::string_view key, UI::LayoutParams *layoutParams) : UI::View(layoutParams), key_(key) {}

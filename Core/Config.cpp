@@ -259,7 +259,10 @@ static const ConfigSetting generalSettings[] = {
 	// (CfgFlag::DEFAULT), não por jogo, já que é sobre o comportamento do
 	// app ao ser minimizado, não sobre um jogo específico.
 	ConfigSetting("GMPBackgroundAutoSaveEnabled", SETTING(g_Config, bGMPBackgroundAutoSaveEnabled), true, CfgFlag::DEFAULT),
-	ConfigSetting("EnableCheats", SETTING(g_Config, bEnableCheats), false, CfgFlag::PER_GAME | CfgFlag::REPORT),
+	// GMP Gameport: trapaças ligadas por padrão (pedido explicito do
+	// usuário) -- ver o CheckBox "Enable Cheats" em
+	// GameSettingsScreen::CreateSystemSettings().
+	ConfigSetting("EnableCheats", SETTING(g_Config, bEnableCheats), true, CfgFlag::PER_GAME | CfgFlag::REPORT),
 	ConfigSetting("EnablePlugins", SETTING(g_Config, bEnablePlugins), true, CfgFlag::PER_GAME | CfgFlag::REPORT),
 	ConfigSetting("CwCheatRefreshRate", SETTING(g_Config, iCwCheatRefreshIntervalMs), 77, CfgFlag::PER_GAME),
 	ConfigSetting("CwCheatScrollPosition", SETTING(g_Config, fCwCheatScrollPosition), 0.0f, CfgFlag::PER_GAME),
@@ -868,7 +871,11 @@ static const ConfigSetting soundSettings[] = {
 	ConfigSetting("AudioBufferSize", SETTING(g_Config, iSDLAudioBufferSize), 256, CfgFlag::DEFAULT),
 
 	ConfigSetting("FillAudioGaps", SETTING(g_Config, bFillAudioGaps), true, CfgFlag::DEFAULT),
-	ConfigSetting("AudioSyncMode", SETTING(g_Config, iAudioPlaybackMode), (int)AudioSyncMode::CLASSIC_PITCH, CfgFlag::DEFAULT),
+	// GMP Gameport: padrao mudado de CLASSIC_PITCH pra GRANULAR ("Smooth"),
+	// pedido explicito do usuario -- o suave (indice 0 no PopupMultiChoice de
+	// GameSettingsScreen.cpp) tem que vir ligado por padrao pra quem nunca
+	// mexeu nas configuracoes.
+	ConfigSetting("AudioSyncMode", SETTING(g_Config, iAudioPlaybackMode), (int)AudioSyncMode::GRANULAR, CfgFlag::DEFAULT),
 
 	// Legacy volume settings, these get auto upgraded through default handlers on the new settings. NOTE: Must be before the new ones in the order here.
 	// The default settings here are still relevant, they will get propagated into the new ones.
@@ -1044,7 +1051,12 @@ static const ConfigSetting controlSettings[] = {
 
 	ConfigSetting("DisableDpadDiagonals", SETTING(g_Config, bDisableDpadDiagonals), false, CfgFlag::PER_GAME),
 	ConfigSetting("GamepadOnlyFocused", SETTING(g_Config, bGamepadOnlyFocused), false, CfgFlag::PER_GAME),
-	ConfigSetting("TouchButtonStyle", SETTING(g_Config, iTouchButtonStyle), 1, CfgFlag::PER_GAME),
+	// GMP Gameport: padrão mudado de "Thin borders" (1, contorno sem
+	// preenchimento) pra "Classic" (0, preenchido) -- o usuário quer os
+	// botões pretos sólidos por padrão, igual à foto de referência. A cor
+	// do preenchimento foi trocada de bege/caqui pra preto em
+	// GetButtonColor() (UI/GamepadEmu.cpp).
+	ConfigSetting("TouchButtonStyle", SETTING(g_Config, iTouchButtonStyle), 0, CfgFlag::PER_GAME),
 	ConfigSetting("TouchButtonOpacity", SETTING(g_Config, iTouchButtonOpacity), 65, CfgFlag::PER_GAME),
 	ConfigSetting("TouchButtonHideSeconds", SETTING(g_Config, iTouchButtonHideSeconds), 8, CfgFlag::PER_GAME),
 	ConfigSetting("AutoCenterTouchAnalog", SETTING(g_Config, bAutoCenterTouchAnalog), false, CfgFlag::PER_GAME),
