@@ -176,6 +176,19 @@ void GameSettingsScreen::PreCreateViews() {
 	ReloadAllThemeInfo();
 }
 
+// GMP Gameport: a classe base (UIScreen::DrawBackground) não faz nada por
+// padrão, então nada limpava a tela antes de desenhar as configurações -- o
+// que estivesse atrás (o jogo rodando, ou a tela anterior) continuava
+// aparecendo por baixo, dando aquele visual "transparente" que o usuário
+// reportou. Aqui a gente só pinta um retângulo sólido do tamanho da tela
+// inteira, na cor de fundo de marca do GMP (mesmo valor de "lumina_bg" em
+// android/res/values/lumina_colors.xml), usando o mesmo padrão que
+// Background.cpp já usa pra desenhar fundos de imagem: esticar o swatch
+// sólido "I_BG" do atlas sobre os bounds da tela, tingido pela cor desejada.
+void GameSettingsScreen::DrawBackground(UIContext &dc) {
+	dc.Draw()->DrawImageStretch(ImageID("I_BG"), dc.GetBounds(), colorAlpha(0x1B240C, 1.0f));
+}
+
 static bool UsingHardwareTextureScaling() {
 	// For now, Vulkan only.
 	return g_Config.bTexHardwareScaling && GetGPUBackend() == GPUBackend::VULKAN && !g_Config.bSoftwareRendering;
@@ -232,22 +245,25 @@ void GameSettingsScreen::CreateTabs() {
 	using namespace UI;
 	auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
 
-	AddTab("GameSettingsGraphics", ms->T("Graphics"), ImageID("I_DISPLAY"), [this](UI::LinearLayout *parent) {
+	// GMP Gameport: as 4 abas (Gráficos/Controles/Áudio/Sistema) viraram UMA
+	// aba só -- o usuário quer tudo numa lista única, em vez de espalhado em
+	// categorias separadas. Cada Create*Settings() já começa com seu próprio
+	// ItemHeader (ver cada função abaixo), então simplesmente chamá-las em
+	// sequência aqui já produz o efeito de "seções agrupadas" (tipo a
+	// referência visual que o usuário mandou), só que tudo em uma rolagem só,
+	// sem abas pra trocar. Um único PaneTitleBar no topo, com o nome
+	// genérico "Configurações" em vez do nome de uma categoria específica.
+	// As funções CreateGraphicsSettings/CreateControlsSettings/
+	// CreateAudioSettings/CreateSystemSettings continuam existindo
+	// exatamente como antes (cada uma com seu próprio bloco #if 0 do resto
+	// desativado) -- só o jeito de chamá-las mudou.
+	AddTab("GameSettings", ms->T("Settings"), [this](UI::LinearLayout *parent) {
 		auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
-		parent->Add(new PaneTitleBar(gamePath_, ms->T("Graphics"), "graphics", new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT)));
-		CreateGraphicsSettings(parent);
-	});
-
-	AddTab("GameSettingsControls", ms->T("Controls"), ImageID("I_CONTROLLER"), [this](UI::LinearLayout *parent) {
-		auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
-		parent->Add(new PaneTitleBar(gamePath_, ms->T("Controls"), "controls"));
+		parent->Add(new PaneTitleBar(gamePath_, ms->T("Settings"), "settings", new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT)));
 		CreateControlsSettings(parent);
-	});
-
-	AddTab("GameSettingsAudio", ms->T("Audio"), ImageID("I_SPEAKER_MAX"), [this](UI::LinearLayout *parent) {
-		auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
-		parent->Add(new PaneTitleBar(gamePath_, ms->T("Audio"), "audio"));
 		CreateAudioSettings(parent);
+		CreateGraphicsSettings(parent);
+		CreateSystemSettings(parent);
 	});
 
 	// GMP Gameport: abas "Rede" e "Ferramentas" ficam completamente ocultas --
@@ -267,12 +283,6 @@ void GameSettingsScreen::CreateTabs() {
 	// 	parent->Add(new PaneTitleBar(gamePath_, ms->T("Tools"), "tools"));
 	// 	CreateToolsSettings(parent);
 	// });
-
-	AddTab("GameSettingsSystem", ms->T("System"), ImageID("I_PSP"), [this](UI::LinearLayout *parent) {
-		auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
-		parent->Add(new PaneTitleBar(gamePath_, ms->T("System"), "system"));
-		CreateSystemSettings(parent);
-	});
 
 	// GMP Gameport: aba de VR também fica fora -- não está na lista de
 	// configurações pedida, e o app roda só em celular/tablet Android mesmo.

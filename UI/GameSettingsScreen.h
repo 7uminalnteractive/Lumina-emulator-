@@ -56,6 +56,13 @@ protected:
 	void CreateTabs() override;
 	bool ShowSearchControls() const override { return true; }
 
+	// GMP Gameport: sem isso a tela não pintava fundo nenhum (o padrão da
+	// classe-base é não fazer nada), então o que estivesse atrás (o jogo, a
+	// tela anterior) ficava visível por baixo das configurações -- esse era
+	// o visual "transparente" reportado. Agora pinta um fundo sólido fixo na
+	// cor de marca do GMP. Ver a implementação em GameSettingsScreen.cpp.
+	void DrawBackground(UIContext &dc) override;
+
 	// GMP Gameport: o app agora roda sempre em paisagem (ver
 	// AndroidManifest.xml), e o layout padrão de UITabbedBaseDialogScreen
 	// para paisagem é abas na lateral esquerda (vertical). O usuário quer
