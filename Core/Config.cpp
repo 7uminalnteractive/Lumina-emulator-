@@ -1195,6 +1195,7 @@ static const ConfigSetting upgradeSettings[] = {
 static const ConfigSetting themeSettings[] = {
 	ConfigSetting("ThemeName", SETTING(g_Config, sThemeName), "GMP Gameport", CfgFlag::DEFAULT),
 	ConfigSetting("LuminaThemeApplied", SETTING(g_Config, bLuminaThemeApplied), false, CfgFlag::DEFAULT),
+	ConfigSetting("GmpDefaultsV2Applied", SETTING(g_Config, bGmpDefaultsV2Applied), false, CfgFlag::DEFAULT),
 };
 
 static const ConfigSetting vrSettings[] = {
@@ -1405,6 +1406,17 @@ void Config::Load(const char *iniFileName, const char *controllerIniFilename) {
 	if (!bLuminaThemeApplied) {
 		sThemeName = "GMP Gameport";
 		bLuminaThemeApplied = true;
+	}
+
+	// GMP Gameport: mesmo problema do tema acima -- quem já tinha um ppsspp.ini
+	// salvo mantém os valores antigos (botões "Thin borders", áudio Classic,
+	// trapaças desligadas) e os novos padrões do código nunca aparecem. Aplica
+	// uma única vez; depois disso o usuário pode mudar à vontade.
+	if (!bGmpDefaultsV2Applied) {
+		iTouchButtonStyle = 0;
+		iAudioPlaybackMode = (int)AudioSyncMode::GRANULAR;
+		bEnableCheats = true;
+		bGmpDefaultsV2Applied = true;
 	}
 
 	iRunCount++;

@@ -436,6 +436,8 @@ public:
 	// only used when there's no saved ppsspp.ini yet, so a pre-existing config
 	// saved with the stock "Default" theme would otherwise never pick up Lumina).
 	bool bLuminaThemeApplied;
+	// GMP Gameport: migração única dos padrões novos (botões pretos, áudio Smooth, trapaças) sobre ppsspp.ini já salvo.
+	bool bGmpDefaultsV2Applied;
 
 	// These aren't saved, just for instant debugging.
 	bool bLogFrameDrops;
