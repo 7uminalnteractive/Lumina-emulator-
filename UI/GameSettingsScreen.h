@@ -39,6 +39,11 @@ class Path;
 // Set by whichever code path opens Settings via LibraryActivity's gear button.
 extern bool g_luminaCloseAppOnSettingsExit;
 
+// GMP Gameport: vira true no instante em que as Configurações abertas pela Biblioteca
+// fecham e o app vai sair. A MainScreen (a tela inicial do PPSSPP, que fica por baixo)
+// usa isso pra pintar tudo de preto em vez de aparecer por alguns frames.
+extern bool g_luminaAppExiting;
+
 // Per-game settings screen - enables you to configure graphic options, control options, etc
 // per game.
 class GameSettingsScreen : public UITabbedBaseDialogScreen {

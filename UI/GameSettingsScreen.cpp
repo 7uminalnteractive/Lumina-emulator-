@@ -114,6 +114,7 @@ void SetMemStickDirDarwin(int requesterToken) {
 #endif
 
 bool g_luminaCloseAppOnSettingsExit = false;
+bool g_luminaAppExiting = false;
 
 GameSettingsScreen::GameSettingsScreen(const Path &gamePath, std::string gameID, bool editThenRestore)
 	// GMP Gameport: removida a flag HorizontalOnlyIcons -- com
@@ -155,6 +156,7 @@ GameSettingsScreen::~GameSettingsScreen() {
 	// already has LibraryActivity underneath, so this just returns them there.
 	if (g_luminaCloseAppOnSettingsExit) {
 		g_luminaCloseAppOnSettingsExit = false;
+		g_luminaAppExiting = true;
 		System_ExitApp();
 	}
 

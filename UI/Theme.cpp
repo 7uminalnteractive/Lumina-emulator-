@@ -170,17 +170,17 @@ static void LoadThemeInfo(const std::vector<Path> &directories) {
 	// depender do arquivo .ini em assets/themes (que tinha o verde-limão).
 	// Entra por último, então sobrescreve qualquer tema de mesmo nome. Visual
 	// novo: fundo todo preto, textos/linhas/detalhes brancos, sem cor de
-	// destaque. No foco/toque o item inverte (fundo claro, texto preto), como
-	// nas telas de configuração do Xbox. Cores no formato 0xAABBGGRR.
+	// destaque. No foco/toque o item fica cinza-escuro com texto branco (a moldura
+	// branca do foco vem de cada tela), como nos menus do Xbox. Cores no formato 0xAABBGGRR.
 	{
 		ThemeInfo gmp;
 		gmp.name = "GMP Gameport";
 		gmp.uItemStyleFg = 0xFFFFFFFF;
 		gmp.uItemStyleBg = 0xFF000000;
-		gmp.uItemFocusedStyleFg = 0xFF000000;
-		gmp.uItemFocusedStyleBg = 0xFFE6E6E6;
-		gmp.uItemDownStyleFg = 0xFF000000;
-		gmp.uItemDownStyleBg = 0xFFBDBDBD;
+		gmp.uItemFocusedStyleFg = 0xFFFFFFFF;
+		gmp.uItemFocusedStyleBg = 0xFF2E2E2E;
+		gmp.uItemDownStyleFg = 0xFFFFFFFF;
+		gmp.uItemDownStyleBg = 0xFF474747;
 		gmp.uItemDisabledStyleFg = 0x80FFFFFF;
 		gmp.uItemDisabledStyleBg = 0xFF000000;
 		gmp.uHeaderStyleFg = 0xFFFFFFFF;

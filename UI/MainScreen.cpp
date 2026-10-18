@@ -41,6 +41,7 @@
 #include "UI/BackgroundAudio.h"
 #include "UI/EmuScreen.h"
 #include "UI/MainScreen.h"
+#include "UI/GameSettingsScreen.h"
 #include "UI/GameScreen.h"
 #include "UI/GameInfoCache.h"
 #include "UI/GameSettingsScreen.h"
@@ -581,6 +582,10 @@ void MainScreen::sendMessage(UIMessage message, const char *value) {
 
 void MainScreen::update() {
 	UIScreen::update();
+	// GMP Gameport: esconde todos os botões/logo da home enquanto o app fecha (ver DrawBackground).
+	if (g_luminaAppExiting && root_) {
+		root_->SetVisibility(UI::V_GONE);
+	}
 	UpdateUIState(UISTATE_MENU);
 
 	if (searchChanged_) {
@@ -603,6 +608,13 @@ void MainScreen::OnLoadFile(UI::EventParams &e) {
 }
 
 void MainScreen::DrawBackground(UIContext &dc) {
+	// GMP Gameport: ao sair das Configurações abertas pela Biblioteca, o app
+	// está fechando, mas por alguns frames esta tela (a home do PPSSPP) ficava
+	// visível. Enquanto isso, só preto.
+	if (g_luminaAppExiting) {
+		dc.FillRect(UI::Drawable(0xFF000000), dc.GetBounds());
+		return;
+	}
 	if (highlightedBackgrounds_.empty()) {
 		return;
 	}

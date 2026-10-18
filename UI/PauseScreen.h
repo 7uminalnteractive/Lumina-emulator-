@@ -93,6 +93,9 @@ private:
 
 	UI::Choice *playButton_ = nullptr;
 
+	// GMP Gameport: largura do painel esquerdo (estilo guia do Xbox), calculada em CreateViews() e usada em DrawBackground().
+	float panelWidth_ = 0.0f;
+
 	// State change tracking, a bit ugly heh, but works.
 	bool lastOnline_ = false;
 	bool lastNetInited_ = false;
