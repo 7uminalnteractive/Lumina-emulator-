@@ -104,6 +104,16 @@ void UITabbedBaseDialogScreen::CreateViews() {
 
 	// Let the subclass create its tabs.
 	CreateTabs();
+
+	// GMP Gameport: com uma aba só, a faixa de abas do topo (voltar + nome da
+	// aba + linha separadora) não serve pra nada. Os dois primeiros filhos do
+	// TabHolder são justamente essa faixa e o separador; só os escondemos, o
+	// resto da lógica de abas continua igual.
+	if (HideTabStrip() && tabHolder_->GetNumSubviews() >= 2) {
+		tabHolder_->GetViewByIndex(0)->SetVisibility(UI::V_GONE);
+		tabHolder_->GetViewByIndex(1)->SetVisibility(UI::V_GONE);
+	}
+
 	if (currentTabSetting_) {
 		tabHolder_->SetInitialTab(*currentTabSetting_);
 	} else {

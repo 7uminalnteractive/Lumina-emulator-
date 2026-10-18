@@ -256,7 +256,11 @@ void GameSettingsScreen::CreateTabs() {
 	// desativado) -- só o jeito de chamá-las mudou.
 	AddTab("GameSettings", ms->T("Settings"), [this](UI::LinearLayout *parent) {
 		auto ms = GetI18NCategory(I18NCat::MAINSETTINGS);
-		parent->Add(new PaneTitleBar(gamePath_, ms->T("Settings"), "settings", new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT)));
+		// GMP Gameport: a faixa de abas do topo foi escondida (HideTabStrip), e
+		// com ela sumiu a seta de voltar; ela vem pra cá, na linha do título.
+		LinearLayout *titleRow = parent->Add(new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT)));
+		titleRow->Add(new Choice(ImageID("I_NAVIGATE_BACK"), new LinearLayoutParams(ITEM_HEIGHT, ITEM_HEIGHT)))->OnClick.Handle<UIScreen>(this, &UIScreen::OnBack);
+		titleRow->Add(new PaneTitleBar(gamePath_, ms->T("Settings"), "settings", new LinearLayoutParams(FILL_PARENT, WRAP_CONTENT, 1.0f)));
 		CreateControlsSettings(parent);
 		CreateAudioSettings(parent);
 		CreateGraphicsSettings(parent);

@@ -47,6 +47,8 @@ protected:
 	virtual void EnsureTabs();
 	virtual bool UsePopupMenuInPortrait() const { return false; }
 	virtual bool ForceHorizontalTabs() const { return false; }
+	// GMP Gameport: esconde a faixa de abas do topo (seta de voltar + nomes das abas + linha). Usado quando só existe uma aba.
+	virtual bool HideTabStrip() const { return false; }
 
 	int GetCurrentTab() const;
 	void SetCurrentTab(int tab);

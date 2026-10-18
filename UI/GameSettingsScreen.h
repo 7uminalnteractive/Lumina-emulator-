@@ -54,7 +54,9 @@ protected:
 	void dialogFinished(const Screen *dialog, DialogResult result) override;
 
 	void CreateTabs() override;
-	bool ShowSearchControls() const override { return true; }
+	// GMP Gameport: sem aba de busca ("Procurar") e sem faixa de abas no topo -- é uma lista única.
+	bool ShowSearchControls() const override { return false; }
+	bool HideTabStrip() const override { return true; }
 
 	// GMP Gameport: sem isso a tela não pintava fundo nenhum (o padrão da
 	// classe-base é não fazer nada), então o que estivesse atrás (o jogo, a
