@@ -179,14 +179,11 @@ void GameSettingsScreen::PreCreateViews() {
 // GMP Gameport: a classe base (UIScreen::DrawBackground) não faz nada por
 // padrão, então nada limpava a tela antes de desenhar as configurações -- o
 // que estivesse atrás (o jogo rodando, ou a tela anterior) continuava
-// aparecendo por baixo, dando aquele visual "transparente" que o usuário
-// reportou. Aqui a gente só pinta um retângulo sólido do tamanho da tela
-// inteira, na cor de fundo de marca do GMP (mesmo valor de "lumina_bg" em
-// android/res/values/lumina_colors.xml), usando o mesmo padrão que
-// Background.cpp já usa pra desenhar fundos de imagem: esticar o swatch
-// sólido "I_BG" do atlas sobre os bounds da tela, tingido pela cor desejada.
+// aparecendo por baixo, dando o visual "transparente". Agora pinta um
+// retângulo preto sólido do tamanho da tela inteira (novo visual: tudo preto,
+// detalhes brancos).
 void GameSettingsScreen::DrawBackground(UIContext &dc) {
-	dc.Draw()->DrawImageStretch(ImageID("I_BG"), dc.GetBounds(), colorAlpha(0x1B240C, 1.0f));
+	dc.FillRect(UI::Drawable(0xFF000000), dc.GetBounds());
 }
 
 static bool UsingHardwareTextureScaling() {

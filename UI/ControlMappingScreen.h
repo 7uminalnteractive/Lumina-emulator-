@@ -51,6 +51,7 @@ protected:
 	void CreateSettingsViews(UI::ViewGroup *parent) override;
 	void CreateContentViews(UI::ViewGroup *parent) override;
 	void update() override;
+	void DrawBackground(UIContext &dc) override;
 
 	std::string_view GetTitle() const override;
 

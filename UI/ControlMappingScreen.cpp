@@ -49,6 +49,29 @@
 
 using KeyMap::MultiInputMapping;
 
+// GMP Gameport: botão com contorno branco fino, no estilo das telas de
+// mapeamento de controle do Xbox/Forza (fundo preto, caixas só com borda
+// branca). Desenha o Choice normal por baixo e só acrescenta a moldura por
+// cima; o preenchimento no foco/pressionado continua vindo do tema.
+class GmpOutlineChoice : public UI::Choice {
+public:
+	GmpOutlineChoice(std::string_view text, UI::LayoutParams *layoutParams = nullptr)
+		: UI::Choice(text, layoutParams) {}
+	GmpOutlineChoice(ImageID image, UI::LayoutParams *layoutParams = nullptr)
+		: UI::Choice(image, layoutParams) {}
+
+	void Draw(UIContext &dc) override {
+		UI::Choice::Draw(dc);
+		const float t = 1.5f;
+		const uint32_t c = 0xFFFFFFFF;
+		const ImageID w = dc.GetTheme().whiteImage;
+		dc.Draw()->DrawImageCenterTexel(w, bounds_.x, bounds_.y, bounds_.x2(), bounds_.y + t, c);
+		dc.Draw()->DrawImageCenterTexel(w, bounds_.x, bounds_.y2() - t, bounds_.x2(), bounds_.y2(), c);
+		dc.Draw()->DrawImageCenterTexel(w, bounds_.x, bounds_.y, bounds_.x + t, bounds_.y2(), c);
+		dc.Draw()->DrawImageCenterTexel(w, bounds_.x2() - t, bounds_.y, bounds_.x2(), bounds_.y2(), c);
+	}
+};
+
 class SingleControlMapper : public UI::LinearLayout {
 public:
 	SingleControlMapper(int pspKey, std::string_view keyName, bool portrait, ScreenManager *scrm, UI::LinearLayoutParams *layoutParams = nullptr)
@@ -107,18 +130,18 @@ void SingleControlMapper::Refresh() {
 	auto iter = keyImages.find(keyName_);
 	// First, look among images.
 	if (iter != keyImages.end()) {
-		replaceAllButton_ = new Choice(iter->second, new LinearLayoutParams(leftColumnWidth, itemH));
+		replaceAllButton_ = new GmpOutlineChoice(iter->second, new LinearLayoutParams(leftColumnWidth, itemH));
 	} else {
 		// No image? Let's translate.
-		replaceAllButton_ = new Choice(mc->T(keyName_), new LinearLayoutParams(leftColumnWidth, itemH));
+		replaceAllButton_ = new GmpOutlineChoice(mc->T(keyName_), new LinearLayoutParams(leftColumnWidth, itemH));
 		replaceAllButton_->SetCentered(true);
 	}
 	root->Add(replaceAllButton_)->OnClick.Handle(this, &SingleControlMapper::OnReplaceAll);
 
-	addButton_ = root->Add(new Choice(" + ", new LayoutParams(WRAP_CONTENT, itemH)));
+	addButton_ = root->Add(new GmpOutlineChoice(" + ", new LayoutParams(WRAP_CONTENT, itemH)));
 	addButton_->OnClick.Handle(this, &SingleControlMapper::OnAdd);
 	if (g_Config.bMouseControl) {
-		Choice *p = root->Add(new Choice("M", new LayoutParams(WRAP_CONTENT, itemH)));
+		Choice *p = root->Add(new GmpOutlineChoice("M", new LayoutParams(WRAP_CONTENT, itemH)));
 		p->OnClick.Handle(this, &SingleControlMapper::OnAddMouse);
 	}
 
@@ -134,18 +157,18 @@ void SingleControlMapper::Refresh() {
 		row->SetSpacing(2.0f);
 		rows_.push_back(row);
 
-		Choice *c = row->Add(new Choice(multiMappingString, new LinearLayoutParams(FILL_PARENT, itemH, 1.0f)));
+		Choice *c = row->Add(new GmpOutlineChoice(multiMappingString, new LinearLayoutParams(FILL_PARENT, itemH, 1.0f)));
 		c->SetTag(StringFromFormat("%d_Change%d", (int)i, pspKey_));
 		c->OnClick.Handle(this, &SingleControlMapper::OnReplace);
 
-		Choice *d = row->Add(new Choice(ImageID("I_TRASHCAN"), new LayoutParams(WRAP_CONTENT, itemH)));
+		Choice *d = row->Add(new GmpOutlineChoice(ImageID("I_TRASHCAN"), new LayoutParams(WRAP_CONTENT, itemH)));
 		d->SetTag(StringFromFormat("%d_Del%d", (int)i, pspKey_));
 		d->OnClick.Handle(this, &SingleControlMapper::OnDelete);
 	}
 
 	if (mappings.empty()) {
 		// look like an empty line
-		Choice *c = rightColumn->Add(new Choice("", new LinearLayoutParams(FILL_PARENT, itemH)));
+		Choice *c = rightColumn->Add(new GmpOutlineChoice("", new LinearLayoutParams(FILL_PARENT, itemH)));
 		c->OnClick.Handle(this, &SingleControlMapper::OnAdd);
 	}
 }
@@ -230,18 +253,18 @@ static const BindingCategory cats[] = {
 void ControlMappingScreen::CreateSettingsViews(UI::ViewGroup *parent) {
 	using namespace UI;
 	auto km = GetI18NCategory(I18NCat::KEYMAPPING);
-	parent->Add(new Choice(km->T("Clear All")))->OnClick.Add([](UI::EventParams &) {
+	parent->Add(new GmpOutlineChoice(km->T("Clear All")))->OnClick.Add([](UI::EventParams &) {
 		KeyMap::ClearAllMappings();
 	});
-	parent->Add(new Choice(km->T("Default All")))->OnClick.Add([](UI::EventParams &) {
+	parent->Add(new GmpOutlineChoice(km->T("Default All")))->OnClick.Add([](UI::EventParams &) {
 		KeyMap::RestoreDefault();
 	});
 	std::string sysName = System_GetProperty(SYSPROP_NAME);
 	// If there's a builtin controller, restore to default should suffice. No need to conf the controller on top.
 	if (!KeyMap::HasBuiltinController(sysName) && KeyMap::GetSeenPads().size()) {
-		parent->Add(new Choice(km->T("Autoconfigure")))->OnClick.Handle(this, &ControlMappingScreen::OnAutoConfigure);
+		parent->Add(new GmpOutlineChoice(km->T("Autoconfigure")))->OnClick.Handle(this, &ControlMappingScreen::OnAutoConfigure);
 	}
-	parent->Add(new Choice(km->T("Show PSP")))->OnClick.Add([this](UI::EventParams &params) {
+	parent->Add(new GmpOutlineChoice(km->T("Show PSP")))->OnClick.Add([this](UI::EventParams &params) {
 		screenManager()->push(new VisualMappingScreen(gamePath_));
 	});
 	parent->Add(new CheckBox(&g_Config.bAllowMappingCombos, km->T("Allow combo mappings")));
@@ -288,6 +311,11 @@ void ControlMappingScreen::CreateContentViews(UI::ViewGroup *parent) {
 	_dbg_assert_(curCat == ARRAY_SIZE(cats) - 2);  // count the sentinel
 
 	keyMapGeneration_ = KeyMap::g_controllerMapGeneration;
+}
+
+// GMP Gameport: fundo todo preto, sem transparência.
+void ControlMappingScreen::DrawBackground(UIContext &dc) {
+	dc.FillRect(UI::Drawable(0xFF000000), dc.GetBounds());
 }
 
 void ControlMappingScreen::update() {

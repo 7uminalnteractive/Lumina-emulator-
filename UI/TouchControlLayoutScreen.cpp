@@ -619,6 +619,11 @@ void TouchControlLayoutScreen::update() {
 	}
 }
 
+// GMP Gameport: fundo todo preto, sem transparência.
+void TouchControlLayoutScreen::DrawBackground(UIContext &dc) {
+	dc.FillRect(UI::Drawable(0xFF000000), dc.GetBounds());
+}
+
 void TouchControlLayoutScreen::CreateViews() {
 	using namespace UI;
 
@@ -627,23 +632,33 @@ void TouchControlLayoutScreen::CreateViews() {
 	const DeviceOrientation orientation = GetDeviceOrientation();
 	InitPadLayout(&g_Config.GetTouchControlsConfig(orientation), orientation, bounds.w, bounds.h);
 
-	// const bool portrait = GetDeviceOrientation() == DeviceOrientation::Portrait;
-
-	const float leftColumnWidth = 200.0f;
-	layoutAreaScale = 1.0f - (leftColumnWidth + 10.0f) / std::max(bounds.w, 1.0f);
+	// GMP Gameport: a barra de ferramentas (Mover / Redimensionar /
+	// Personalizar / Grade / Resetar / Voltar) saiu da coluna esquerda e foi
+	// pro TOPO da tela, numa faixa horizontal. A área de pré-visualização dos
+	// botões ocupa o resto, embaixo, com a proporção da tela preservada (o
+	// layoutAreaScale continua sendo o fator único de escala X/Y usado pelos
+	// botões arrastáveis, só que agora calculado pela ALTURA que sobra, não
+	// mais pela largura que a coluna esquerda tirava).
+	const float topBarHeight = ITEM_HEIGHT + 8.0f;
+	const float labelHeight = 28.0f;
+	const float margin = 12.0f;
+	const float availableHeight = bounds.h - topBarHeight - labelHeight - margin * 2.0f;
+	layoutAreaScale = std::min(1.0f, std::max(0.3f, availableHeight / std::max(bounds.h, 1.0f)));
 
 	auto co = GetI18NCategory(I18NCat::CONTROLS);
 	auto di = GetI18NCategory(I18NCat::DIALOG);
 
-	auto rootLayout = new LinearLayout(ORIENT_HORIZONTAL, new LayoutParams(FILL_PARENT, FILL_PARENT));
+	auto rootLayout = new LinearLayout(ORIENT_VERTICAL, new LayoutParams(FILL_PARENT, FILL_PARENT));
 	rootLayout->SetSpacing(0.0f);
 	root_ = rootLayout;
 
-	ScrollView *leftColumnScroll = root_->Add(new ScrollView(ORIENT_VERTICAL, new LinearLayoutParams(leftColumnWidth, FILL_PARENT)));
-	leftColumnScroll->SetAlignOpposite(true);
-	LinearLayout *leftColumn = leftColumnScroll->Add(new LinearLayout(ORIENT_VERTICAL, new LinearLayoutParams(Margins(12.0f, 0.0f))));
+	// Faixa do topo; rola na horizontal se a tela for estreita demais.
+	ScrollView *topScroll = root_->Add(new ScrollView(ORIENT_HORIZONTAL, new LinearLayoutParams(FILL_PARENT, topBarHeight)));
+	topScroll->SetShadows(false);
+	LinearLayout *topBar = topScroll->Add(new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT, Margins(margin, 4.0f))));
+	topBar->SetSpacing(6.0f);
 
-	mode_ = new ChoiceStrip(ORIENT_VERTICAL);
+	mode_ = new ChoiceStrip(ORIENT_HORIZONTAL);
 	mode_->AddChoice(di->T("Move"), ImageID("I_MOVE"));
 	mode_->AddChoice(di->T("Resize"), ImageID("I_RESIZE"));
 	mode_->SetSelection(0, false);
@@ -655,24 +670,23 @@ void TouchControlLayoutScreen::CreateViews() {
 	});
 
 	CheckBox *snap = new CheckBox(&g_Config.bTouchSnapToGrid, di->T("Snap"));
-	PopupSliderChoice *gridSize = new PopupSliderChoice(&g_Config.iTouchSnapGridSize, 2, 256, 64, di->T("Grid"), screenManager(), "");
+	PopupSliderChoice *gridSize = new PopupSliderChoice(&g_Config.iTouchSnapGridSize, 2, 256, 64, di->T("Grid"), screenManager(), "", new LinearLayoutParams(240.0f, ITEM_HEIGHT));
 	gridSize->SetEnabledPtr(&g_Config.bTouchSnapToGrid);
 
-	leftColumn->Add(mode_);
-	leftColumn->Add(new Choice(co->T("Customize")))->OnClick.Add([this](UI::EventParams &e) {
+	// Voltar vem primeiro: numa tela estreita, a barra rola e este é o botão
+	// que o usuário nunca pode perder de vista.
+	topBar->Add(new Choice(di->T("Back"), ImageID("I_NAVIGATE_BACK")))->OnClick.Handle<UIScreen>(this, &UIScreen::OnBack);
+	topBar->Add(mode_);
+	topBar->Add(new Choice(co->T("Customize")))->OnClick.Add([this](UI::EventParams &e) {
 		screenManager()->push(new TouchControlVisibilityScreen(gamePath_));
 	});
-	leftColumn->Add(snap);
-	leftColumn->Add(gridSize);
-	leftColumn->Add(new Choice(di->T("Reset")))->OnClick.Handle(this, &TouchControlLayoutScreen::OnReset);
-	leftColumn->Add(new Spacer(12.0f));
-	leftColumn->Add(new Choice(di->T("Back"), ImageID("I_NAVIGATE_BACK")))->OnClick.Handle<UIScreen>(this, &UIScreen::OnBack);
-	leftColumn->Add(new Spacer(0.0f));
-	leftColumnScroll->SetShadows(false);
+	topBar->Add(snap);
+	topBar->Add(gridSize);
+	topBar->Add(new Choice(di->T("Reset")))->OnClick.Handle(this, &TouchControlLayoutScreen::OnReset);
 
-	LinearLayout* rightColumn = root_->Add(new LinearLayout(ORIENT_VERTICAL, new LinearLayoutParams(1.0f, Margins(0.0f, 12.0f, 12.0f, 12.0f))));
-	rightColumn->Add(new TextView(co->T(DeviceOrientationToString(orientation))))->SetTextSize(TextSize::Small);
-	rightColumn->Add(new Spacer(new LinearLayoutParams(1.0)));
-	float previewHeight = bounds.h * layoutAreaScale;
-	layoutView_ = rightColumn->Add(new ControlLayoutView(GetDeviceOrientation(), new LinearLayoutParams(FILL_PARENT, previewHeight)));
+	// Área de pré-visualização, centralizada na horizontal.
+	const float previewWidth = bounds.w * layoutAreaScale;
+	const float previewHeight = bounds.h * layoutAreaScale;
+	root_->Add(new TextView(co->T(DeviceOrientationToString(orientation)), new LinearLayoutParams(WRAP_CONTENT, labelHeight, Margins(margin, 0.0f))))->SetTextSize(TextSize::Small);
+	layoutView_ = root_->Add(new ControlLayoutView(GetDeviceOrientation(), new LinearLayoutParams(previewWidth, previewHeight, 0.0f, Gravity::G_HCENTER, Margins(0.0f, 0.0f, 0.0f, margin))));
 }

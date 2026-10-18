@@ -165,6 +165,42 @@ static void LoadThemeInfo(const std::vector<Path> &directories) {
 			}
 		}
 	}
+
+	// GMP Gameport: tema "GMP Gameport" definido AQUI no código, em vez de
+	// depender do arquivo .ini em assets/themes (que tinha o verde-limão).
+	// Entra por último, então sobrescreve qualquer tema de mesmo nome. Visual
+	// novo: fundo todo preto, textos/linhas/detalhes brancos, sem cor de
+	// destaque. No foco/toque o item inverte (fundo claro, texto preto), como
+	// nas telas de configuração do Xbox. Cores no formato 0xAABBGGRR.
+	{
+		ThemeInfo gmp;
+		gmp.name = "GMP Gameport";
+		gmp.uItemStyleFg = 0xFFFFFFFF;
+		gmp.uItemStyleBg = 0xFF000000;
+		gmp.uItemFocusedStyleFg = 0xFF000000;
+		gmp.uItemFocusedStyleBg = 0xFFE6E6E6;
+		gmp.uItemDownStyleFg = 0xFF000000;
+		gmp.uItemDownStyleBg = 0xFFBDBDBD;
+		gmp.uItemDisabledStyleFg = 0x80FFFFFF;
+		gmp.uItemDisabledStyleBg = 0xFF000000;
+		gmp.uHeaderStyleFg = 0xFFFFFFFF;
+		gmp.uHeaderStyleBg = 0x00000000;
+		gmp.uInfoStyleFg = 0xFFFFFFFF;
+		gmp.uInfoStyleBg = 0x00000000;
+		gmp.uPopupStyleFg = 0xFFFFFFFF;
+		gmp.uPopupStyleBg = 0xFF111111;
+		gmp.uPopupTitleStyleFg = 0xFFFFFFFF;
+		gmp.uPopupTitleStyleBg = 0x00000000;
+		gmp.uTooltipStyleFg = 0xFFFFFFFF;
+		gmp.uTooltipStyleBg = 0xF0111111;
+		gmp.uCollapsibleHeaderStyleFg = 0xFFFFFFFF;
+		gmp.uCollapsibleHeaderStyleBg = 0xFF000000;
+		gmp.uBackgroundColor = 0xFF000000;
+		gmp.uScrollbarColor = 0xC0FFFFFF;
+		gmp.uPopupSliderColor = 0xFFFFFFFF;
+		gmp.uPopupSliderFocusedColor = 0xFFBDBDBD;
+		appendTheme(gmp);
+	}
 }
 
 static UI::Style MakeStyle(uint32_t fg, uint32_t bg) {

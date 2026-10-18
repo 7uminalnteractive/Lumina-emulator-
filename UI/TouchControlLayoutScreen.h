@@ -29,6 +29,7 @@ public:
 	TouchControlLayoutScreen(const Path &gamePath) : UIBaseDialogScreen(gamePath) {}
 
 	void CreateViews() override;
+	void DrawBackground(UIContext &dc) override;
 	void dialogFinished(const Screen *dialog, DialogResult result) override;
 	void onFinish(DialogResult reason) override;
 	void update() override;
