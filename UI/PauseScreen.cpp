@@ -508,7 +508,28 @@ void GamePauseScreen::CreateSavestateControls(UI::LinearLayout *leftColumnItems,
 	LinearLayout *slotRow = slotCarousel->Add(new LinearLayout(ORIENT_HORIZONTAL, new LinearLayoutParams(WRAP_CONTENT, WRAP_CONTENT)));
 	slotRow->SetSpacing(12.0f);
 
-	for (int i = 0; i < g_Config.iSaveStateSlotCount; i++) {
+	// GMP Gameport: os dois primeiros cards do carrossel (que seriam os slots 1
+	// e 2 de save state) viraram "Continuar" e "Sair pro menu" -- saíram da
+	// lista da esquerda. Os slots seguintes (3, 4, 5...) continuam como cards
+	// de save normais. Ver actionCardsInCarousel_ em CreateViews() para o que
+	// acontece quando este método nem chega a rodar (save states bloqueados).
+	actionCardsInCarousel_ = true;
+
+	for (int i = 0; i < std::max(2, (int)g_Config.iSaveStateSlotCount); i++) {
+		if (i == 0) {
+			Choice *continueCard = slotRow->Add(new GmpFocusChoice(pa->T("Continue"), ImageID("I_PLAY"), new LinearLayoutParams(280, 170, Gravity::G_TOPLEFT, Margins(0, 0, 0, 0))));
+			continueCard->SetCentered(true);
+			continueCard->OnClick.Handle<UIScreen>(this, &UIScreen::OnBack);
+			root_->SetDefaultFocusView(continueCard);
+			continue;
+		}
+		if (i == 1) {
+			Choice *exitCard = slotRow->Add(new GmpFocusChoice(pa->T("Exit to menu"), ImageID("I_EXIT"), new LinearLayoutParams(280, 170, Gravity::G_TOPLEFT, Margins(0, 0, 0, 0))));
+			exitCard->SetCentered(true);
+			exitCard->OnClick.Handle(this, &GamePauseScreen::OnExit);
+			exitCard->SetEnabled(!bootPending_);
+			continue;
+		}
 		SaveSlotView *slot = slotRow->Add(new SaveSlotView(saveStatePrefix_, i, new LinearLayoutParams(280, 170, Gravity::G_TOPLEFT, Margins(0,0,0,0))));
 		slot->OnStateLoaded.Handle(this, &GamePauseScreen::OnState);
 		slot->OnStateSaved.Handle(this, &GamePauseScreen::OnState);
@@ -594,6 +615,9 @@ UI::Margins GamePauseScreen::RootMargins() const {
 
 void GamePauseScreen::CreateViews() {
 	using namespace UI;
+
+	// GMP Gameport: CreateSavestateControls() liga isto quando põe Continuar/Sair no carrossel.
+	actionCardsInCarousel_ = false;
 
 	Margins scrollMargins(0, 10, 0, 0);
 	auto gr = GetI18NCategory(I18NCat::GRAPHICS);
@@ -804,6 +828,11 @@ void GamePauseScreen::CreateViews() {
 
 	// GMP Gameport: sempre mostra as opções extras (antes só em paisagem).
 	AddExtraOptions(rightColumnItems);
+	// GMP Gameport: se Continuar/Sair já estão no carrossel, não repete aqui
+	// (a lista fica sem eles). Só quando os save states estão bloqueados
+	// (hardcore/rede) eles continuam no fim da lista, senão o jogador ficaria
+	// sem como continuar ou sair.
+	if (!actionCardsInCarousel_) {
 	rightColumnItems->Add(new Spacer(20.0));
 	// Mantém o rótulo "Sair pro menu"; o comportamento (voltar ao início) está em OnExit.
 	Choice *exit = new GmpFocusChoice(pa->T("Exit to menu"), ImageID("I_EXIT"));
@@ -825,6 +854,7 @@ void GamePauseScreen::CreateViews() {
 
 	exit->OnClick.Handle(this, &GamePauseScreen::OnExit);
 	exit->SetEnabled(!bootPending_);
+	}
 
 	if (middleColumn) {
 		middleColumn->SetSpacing(8.0f);

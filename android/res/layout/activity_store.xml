@@ -49,14 +49,13 @@
                 android:layout_height="48dp"
                 android:orientation="horizontal"
                 android:gravity="center"
-                android:background="@drawable/gmp_nav_item_selected"
                 android:layout_marginBottom="12dp">
 
                 <ImageView
                     android:layout_width="22dp"
                     android:layout_height="22dp"
                     android:src="@drawable/ic_nav_download"
-                    android:tint="@color/lumina_on_accent"
+                    android:tint="@color/lumina_blue"
                     android:contentDescription="@null" />
 
             </LinearLayout>

@@ -53,6 +53,10 @@ public:
 
 	const char *tag() const override { return "GameSettings"; }
 
+	// GMP Gameport: marca o app como "saindo" já no instante em que as Configurações
+	// terminam (antes do pop), pra home do PPSSPP por baixo nunca aparecer.
+	void onFinish(DialogResult reason) override;
+
 protected:
 	void CallbackRestoreDefaults(bool yes);
 	void CallbackMemstickFolder(bool yes);

@@ -173,6 +173,13 @@ GameSettingsScreen::~GameSettingsScreen() {
 	System_PostUIMessage(UIMessage::GPU_CONFIG_CHANGED);
 }
 
+void GameSettingsScreen::onFinish(DialogResult reason) {
+	UITabbedBaseDialogScreen::onFinish(reason);
+	if (g_luminaCloseAppOnSettingsExit) {
+		g_luminaAppExiting = true;
+	}
+}
+
 void GameSettingsScreen::PreCreateViews() {
 	ReloadAllPostShaderInfo(screenManager()->getDrawContext());
 	ReloadAllThemeInfo();

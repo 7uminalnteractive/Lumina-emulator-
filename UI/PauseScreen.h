@@ -96,6 +96,9 @@ private:
 	// GMP Gameport: largura do painel esquerdo (estilo guia do Xbox), calculada em CreateViews() e usada em DrawBackground().
 	float panelWidth_ = 0.0f;
 
+	// GMP Gameport: true quando os botões Continuar/Sair foram colocados como cards no carrossel de save states.
+	bool actionCardsInCarousel_ = false;
+
 	// State change tracking, a bit ugly heh, but works.
 	bool lastOnline_ = false;
 	bool lastNetInited_ = false;
